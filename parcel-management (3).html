@@ -1,0 +1,2616 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบรับ–จ่ายพัสดุ | เลอ รัฟฟิเน่ สุขุมวิท 24</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f5f4f0;color:#1a1a1a;font-size:15px}
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap');
+
+:root{
+  --navy:#1a2744;--navy2:#243158;--gold:#b8963e;--gold2:#d4ad58;
+  --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;
+  --text:#1a1a1a;--muted:#6b6b6b;--light:#f0ede5;
+  --green:#1a7a4a;--green-bg:#e8f5ee;
+  --red:#b83232;--red-bg:#fdf0f0;
+  --amber:#a06800;--amber-bg:#fef7e6;
+  --blue:#1a4a8a;--blue-bg:#eef3fb;
+  --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08)
+}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh}
+.main{flex:1;overflow-x:hidden}
+
+/* Sidebar */
+.logo-area{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.logo-title{color:#fff;font-size:13px;font-weight:600;letter-spacing:.3px}
+.logo-sub{color:var(--gold2);font-size:11px;margin-top:2px}
+.nav-section{padding:12px 0}
+.nav-label{color:rgba(255,255,255,.35);font-size:10px;font-weight:600;letter-spacing:1px;padding:4px 16px 8px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13.5px;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(184,150,62,.15);color:var(--gold2);border-left-color:var(--gold)}
+.nav-item i{font-size:17px;width:20px}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600}
+
+/* Header */
+.page-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-size:16px;font-weight:600;color:var(--navy)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.header-actions{display:flex;gap:8px}
+@media(max-width:768px){.page-header{display:none}}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy2)}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:var(--gold2)}
+.btn-outline{background:#fff;color:var(--navy);border-color:var(--border)}
+.btn-outline:hover{background:var(--light)}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:#f5c5c5}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:#b8e0c8}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn i{font-size:15px}
+
+/* Content */
+.content{padding:20px 24px}
+.section{display:none}
+.section.active{display:block}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px}
+.card-title i{color:var(--gold)}
+.card-body{padding:18px}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.kpi-value{font-size:26px;font-weight:600;color:var(--navy);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-icon{float:right;font-size:28px;opacity:.12}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f7f3;font-weight:600;color:var(--navy);padding:10px 12px;text-align:left;font-size:12px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:hover td{background:#fafaf8}
+tr:last-child td{border-bottom:none}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-pending{background:#fff3e0;color:#e65100}
+.badge-collected{background:var(--green-bg);color:var(--green)}
+.badge-overdue{background:var(--red-bg);color:var(--red)}
+.badge-doc{background:#e3f2fd;color:#1565c0}
+.badge-box{background:#f3e5f5;color:#6a1b9a}
+.badge-food{background:#fff8e1;color:#f57f17}
+.badge-large{background:#fce4ec;color:#880e4f}
+.badge-kerry{background:#ff6f00;color:#fff}
+.badge-flash{background:#f50057;color:#fff}
+.badge-dhl{background:#ffcc00;color:#333}
+.badge-thpost{background:#1565c0;color:#fff}
+.badge-jt{background:#f44336;color:#fff}
+.badge-lazada{background:#0f146b;color:#fff}
+.badge-shopee{background:#ee4d2d;color:#fff}
+.badge-other{background:#eee;color:#555}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:500;color:var(--navy)}
+.form-group input,.form-group select,.form-group textarea{
+  padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:inherit;color:var(--text);background:#fff;
+  transition:border-color .15s
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+  outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,39,68,.08)
+}
+.form-group textarea{resize:vertical;min-height:70px}
+.required{color:var(--red)}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;width:680px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:15px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.close-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px}
+.close-btn:hover{color:var(--text)}
+
+/* Status indicator */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot-green{background:var(--green)}
+.dot-amber{background:#e6a817}
+.dot-red{background:var(--red)}
+.dot-blue{background:var(--blue)}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.filter-bar input,.filter-bar select{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
+.filter-bar input{min-width:220px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:9px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+
+/* Overdue highlight */
+.overdue-7{background:#fffde7}
+.overdue-15{background:#fff3e0}
+.overdue-30{background:#fdf0f0}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:all .15s}
+.upload-zone:hover{border-color:var(--navy);color:var(--navy)}
+.upload-zone i{display:block;font-size:28px;margin-bottom:6px;opacity:.5}
+.thumb-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.thumb{width:64px;height:64px;border-radius:6px;object-fit:cover;border:1px solid var(--border)}
+
+/* Signature pad */
+#sigCanvas{border:1px solid var(--border);border-radius:8px;cursor:crosshair;display:block;width:100%;height:120px;touch-action:none}
+
+/* Notification template */
+.notif-box{background:var(--light);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;font-family:inherit}
+
+/* Alert */
+.alert{border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px}
+.alert-warning{background:var(--amber-bg);color:var(--amber);border:1px solid #f5d990}
+.alert-info{background:var(--blue-bg);color:var(--blue);border:1px solid #b8d0f0}
+
+/* Scanner */
+.scan-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap}
+.scan-btn:hover{background:var(--navy2)}
+.scan-btn i{font-size:16px}
+.scan-input-wrap{display:flex;gap:8px;align-items:stretch}
+.scan-input-wrap input{flex:1}
+#scan-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;flex-direction:column;align-items:center;justify-content:center}
+#scan-overlay.show{display:flex}
+.scan-viewport{position:relative;width:min(360px,90vw);border-radius:14px;overflow:hidden;background:#000}
+#scan-video{width:100%;display:block;border-radius:14px}
+.scan-frame{position:absolute;inset:0;pointer-events:none}
+.scan-corner{position:absolute;width:32px;height:32px;border-color:var(--gold);border-style:solid}
+.sc-tl{top:16px;left:16px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.sc-tr{top:16px;right:16px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.sc-bl{bottom:16px;left:16px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.sc-br{bottom:16px;right:16px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:16px;right:16px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:scanline 2s ease-in-out infinite;top:50%}
+@keyframes scanline{0%,100%{top:20%}50%{top:80%}}
+.scan-label{color:#fff;font-size:14px;margin-bottom:14px;font-weight:500;letter-spacing:.3px;text-align:center}
+.scan-sub{color:rgba(255,255,255,.55);font-size:12px;margin-top:10px;text-align:center}
+.scan-result-flash{position:absolute;inset:0;background:rgba(184,150,62,.25);border-radius:14px;animation:flash .4s ease-out forwards}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+.scan-manual-row{display:flex;gap:8px;width:min(360px,90vw);margin-top:12px}
+.scan-manual-row input{flex:1;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;font-family:inherit}
+.scan-manual-row input::placeholder{color:rgba(255,255,255,.35)}
+.scan-manual-row input:focus{outline:none;border-color:var(--gold)}
+.scan-close-btn{margin-top:18px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.scan-close-btn:hover{background:rgba(255,255,255,.18)}
+.scan-status{min-height:20px;font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-top:6px}
+/* Mobile quick-scan page */
+#sec-scan .content{padding:16px}
+.scan-page-hero{background:var(--navy);border-radius:12px;padding:20px;text-align:center;color:#fff;margin-bottom:16px}
+.scan-page-hero i{font-size:40px;color:var(--gold2);display:block;margin-bottom:8px}
+.scan-page-hero h2{font-size:16px;font-weight:600;margin-bottom:4px}
+.scan-page-hero p{font-size:12px;color:rgba(255,255,255,.6)}
+
+/* Print area */
+@media print{
+  .sidebar,.page-header,.header-actions,.filter-bar,.btn,.modal-overlay{display:none!important}
+  .section{display:block!important}
+  .content{padding:0}
+}
+
+/* ===================== MOBILE RESPONSIVE ===================== */
+@media(max-width:768px){
+  /* Hide desktop sidebar, show mobile bottom nav */
+  .sidebar{display:none}
+  .main{padding-bottom:68px} /* space for bottom nav */
+
+  /* Mobile top bar */
+  .page-header{padding:12px 16px;top:0}
+  .page-title{font-size:15px}
+  .page-sub{display:none}
+  /* Hide text labels in header action buttons on mobile, keep icons */
+  .header-actions .btn span,.header-actions .btn-text{display:none}
+  .header-actions .btn{padding:7px 10px;min-width:36px;justify-content:center}
+
+  /* Content padding */
+  .content{padding:14px 14px}
+
+  /* KPI grid: 2 columns */
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .kpi{padding:12px 14px}
+  .kpi-value{font-size:22px}
+  .kpi-label{font-size:10px}
+
+  /* Grids collapse */
+  .grid-2,.grid-3{grid-template-columns:1fr;gap:12px}
+
+  /* Tables: horizontal scroll with sticky first col */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:560px}
+  /* Compact table on mobile */
+  th,td{padding:8px 10px;font-size:12px}
+
+  /* Filter bar wraps */
+  .filter-bar{gap:8px}
+  .filter-bar input{min-width:0;flex:1}
+  .filter-bar select{min-width:0}
+
+  /* Modals: full-screen bottom sheet on mobile */
+  .modal-overlay{align-items:flex-end}
+  .modal{
+    width:100%;max-width:100%;
+    border-radius:16px 16px 0 0;
+    max-height:92vh;
+    margin:0;
+  }
+  .modal-header{padding:14px 16px;border-radius:16px 16px 0 0}
+  .modal-body{padding:16px}
+  .modal-footer{padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+
+  /* Form grids collapse to 1 col */
+  .form-grid,.form-grid-3{grid-template-columns:1fr}
+
+  /* Collect section: stack cards */
+  #sec-collect .grid-2{grid-template-columns:1fr}
+  #collect-form-card{display:block !important} /* always show on mobile after selection */
+
+  /* Scan page */
+  #sec-scan .content{padding:12px}
+  .scan-page-hero{padding:16px;margin-bottom:12px}
+  .scan-viewport{width:min(320px,94vw)}
+
+  /* Cards */
+  .card-header{padding:12px 14px}
+  .card-body{padding:14px}
+
+  /* Tabs: scrollable */
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;gap:0}
+  .tab{white-space:nowrap;flex-shrink:0;padding:9px 14px}
+
+  /* Badges smaller */
+  .badge{font-size:10px;padding:2px 6px}
+
+  /* Chart heights */
+  .chart-wrap{height:200px}
+  .chart-wrap2{height:160px}
+
+  /* Report KPI 2-col */
+  #sec-report .kpi-grid{grid-template-columns:1fr 1fr}
+
+  /* Settings grid */
+  #sec-settings .grid-2{grid-template-columns:1fr}
+
+  /* Signature canvas full width */
+  #sigCanvas{height:100px}
+
+  /* FAB quick-add button */
+  .fab{
+    display:flex;
+    position:fixed;
+    bottom:76px;right:16px;
+    width:52px;height:52px;
+    background:var(--navy);
+    color:#fff;border:none;
+    border-radius:50%;
+    align-items:center;justify-content:center;
+    font-size:24px;cursor:pointer;
+    box-shadow:0 4px 16px rgba(26,39,68,.35);
+    z-index:90;
+    transition:transform .15s;
+  }
+  .fab:active{transform:scale(.92)}
+
+  /* Quick scan FAB */
+  .fab-scan{
+    display:flex;
+    position:fixed;
+    bottom:76px;left:16px;
+    width:52px;height:52px;
+    background:var(--gold);
+    color:#fff;border:none;
+    border-radius:50%;
+    align-items:center;justify-content:center;
+    font-size:22px;cursor:pointer;
+    box-shadow:0 4px 16px rgba(184,150,62,.4);
+    z-index:90;
+    transition:transform .15s;
+  }
+  .fab-scan:active{transform:scale(.92)}
+}
+
+/* Desktop: hide mobile-only elements */
+@media(min-width:769px){
+  .bottom-nav,.fab,.fab-scan,.mobile-topbar{display:none !important}
+}
+
+/* Bottom Navigation Bar */
+.bottom-nav{
+  display:none; /* shown via media query */
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--navy);
+  border-top:1px solid rgba(255,255,255,.1);
+  z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@media(max-width:768px){
+  .bottom-nav{display:flex}
+}
+.bottom-nav-items{
+  display:flex;width:100%;
+}
+.bn-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:8px 4px 6px;gap:3px;cursor:pointer;
+  color:rgba(255,255,255,.5);font-size:9.5px;font-weight:500;
+  transition:color .15s;border:none;background:none;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.bn-item i{font-size:21px;line-height:1}
+.bn-item.active{color:var(--gold2)}
+.bn-item.active::before{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:2px;
+  background:var(--gold);border-radius:0 0 3px 3px;
+}
+.bn-badge{
+  position:absolute;top:5px;right:calc(50% - 18px);
+  background:var(--red);color:#fff;font-size:9px;
+  padding:1px 5px;border-radius:8px;font-weight:700;min-width:16px;text-align:center;
+}
+
+/* Mobile swipe drawer (sidebar as drawer) */
+.sidebar-drawer{
+  display:none;
+  position:fixed;inset:0;z-index:200;
+}
+.sidebar-drawer.open{display:flex}
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.drawer-panel{
+  position:relative;width:260px;height:100%;
+  background:var(--navy);overflow-y:auto;
+  transform:translateX(-100%);transition:transform .25s;
+}
+.sidebar-drawer.open .drawer-panel{transform:translateX(0)}
+.drawer-close{
+  position:absolute;top:12px;right:12px;
+  background:rgba(255,255,255,.1);border:none;color:#fff;
+  width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Mobile top bar (hamburger) */
+.mobile-topbar{
+  display:none;
+  position:sticky;top:0;z-index:60;
+  background:var(--navy);
+  padding:10px 16px;
+  align-items:center;justify-content:space-between;
+}
+@media(max-width:768px){.mobile-topbar{display:flex}}
+.mobile-topbar-title{color:#fff;font-size:13px;font-weight:600}
+.mobile-topbar-sub{color:var(--gold2);font-size:10px}
+.hamburger-btn{
+  background:none;border:none;color:#fff;font-size:22px;
+  cursor:pointer;padding:4px;display:flex;
+}
+
+/* Mobile receive quick form (bottom sheet style) */
+.receive-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:150;
+  background:#fff;border-radius:16px 16px 0 0;
+  box-shadow:0 -4px 24px rgba(0,0,0,.18);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  max-height:92vh;overflow-y:auto;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.receive-sheet.open{transform:translateY(0)}
+.sheet-handle{
+  width:36px;height:4px;background:#ddd;border-radius:2px;
+  margin:10px auto 0;
+}
+.sheet-header{
+  padding:14px 18px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:#fff;z-index:1;
+}
+.sheet-title{font-size:15px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px}
+.sheet-body{padding:16px}
+.sheet-footer{
+  padding:12px 16px;
+  border-top:1px solid var(--border);
+  position:sticky;bottom:0;background:#fff;
+  padding-bottom:max(12px,env(safe-area-inset-bottom));
+}
+.sheet-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:140;
+}
+.sheet-overlay.open{display:block}
+
+/* Thumb larger on mobile */
+@media(max-width:768px){
+  .thumb{width:56px;height:56px}
+  .scan-input-wrap{flex-direction:row}
+  .scan-btn{white-space:nowrap;flex-shrink:0}
+  /* Urgency table: truncate long text */
+  #urgent-table td{max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Bigger tap targets */
+  .btn{min-height:36px}
+  .btn-sm{min-height:32px;padding:5px 10px}
+  /* nav item in modals */
+  .form-group input,.form-group select,.form-group textarea{font-size:16px} /* prevent iOS zoom */
+  select{font-size:16px}
+}
+
+/* Section divider */
+.divider{height:1px;background:var(--border);margin:16px 0}
+.section-sub-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+
+.empty-state{text-align:center;padding:40px;color:var(--muted)}
+.empty-state i{font-size:36px;opacity:.3;display:block;margin-bottom:8px}
+
+/* Charts */
+.chart-wrap{position:relative;height:240px}
+.chart-wrap2{position:relative;height:200px}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+.mt-12{margin-top:12px}
+.mt-16{margin-top:16px}
+.mt-20{margin-top:20px}
+.mb-12{margin-bottom:12px}
+.mb-16{margin-bottom:16px}
+.flex{display:flex}
+.flex-center{display:flex;align-items:center}
+.gap-8{gap:8px}
+.gap-12{gap:12px}
+.ml-auto{margin-left:auto}
+.text-right{text-align:right}
+.text-muted{color:var(--muted)}
+.text-sm{font-size:12px}
+.fw-600{font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- Mobile Top Bar (hamburger + title) -->
+<div class="mobile-topbar">
+  <div>
+    <div class="mobile-topbar-title">เลอ รัฟฟิเน่ สุขุมวิท 24</div>
+    <div class="mobile-topbar-sub">ระบบจัดการพัสดุ</div>
+  </div>
+  <button class="hamburger-btn" onclick="openDrawer()" aria-label="เมนู"><i class="ti ti-menu-2"></i></button>
+</div>
+
+<!-- Sidebar Drawer (mobile) -->
+<div class="sidebar-drawer" id="sidebar-drawer">
+  <div class="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer-panel">
+    <button class="drawer-close" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+    <div class="logo-area" style="padding-top:52px">
+      <div class="logo-title">เลอ รัฟฟิเน่ สุขุมวิท 24</div>
+      <div class="logo-sub">ระบบจัดการพัสดุ</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">หลัก</div>
+      <div class="nav-item" onclick="showSectionMobile('dashboard')"><i class="ti ti-layout-dashboard"></i> แดชบอร์ด</div>
+      <div class="nav-item" onclick="showSectionMobile('receive')"><i class="ti ti-package-import"></i> รับพัสดุ</div>
+      <div class="nav-item" onclick="showSectionMobile('scan')"><i class="ti ti-scan" style="color:var(--gold2)"></i> <span style="color:var(--gold2)">สแกนพัสดุ</span></div>
+      <div class="nav-item" onclick="showSectionMobile('pending')"><i class="ti ti-packages"></i> พัสดุรอรับ <span class="nav-badge" id="drawer-badge-pending"></span></div>
+      <div class="nav-item" onclick="showSectionMobile('collect')"><i class="ti ti-package-export"></i> จ่ายพัสดุ</div>
+      <div class="nav-label">รายงาน</div>
+      <div class="nav-item" onclick="showSectionMobile('report')"><i class="ti ti-chart-bar"></i> รายงาน & สถิติ</div>
+      <div class="nav-item" onclick="showSectionMobile('history')"><i class="ti ti-history"></i> ประวัติทั้งหมด</div>
+      <div class="nav-label">เอกสาร</div>
+      <div class="nav-item" onclick="showSectionMobile('forms')"><i class="ti ti-file-text"></i> แบบฟอร์ม & SOP</div>
+      <div class="nav-item" onclick="showSectionMobile('settings')"><i class="ti ti-settings"></i> ตั้งค่า</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet Overlay -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeReceiveSheet()"></div>
+
+<!-- Mobile Bottom Sheet – รับพัสดุ -->
+<div class="receive-sheet" id="receive-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title"><i class="ti ti-package-import" style="color:var(--gold)"></i> รับพัสดุใหม่</div>
+    <button class="close-btn" onclick="closeReceiveSheet()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="sheet-body" id="sheet-body">
+    <!-- filled by openReceiveSheet() -->
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="saveParcelSheet()">
+      <i class="ti ti-device-floppy"></i> บันทึกรับพัสดุ
+    </button>
+  </div>
+</div>
+
+<!-- FAB: Quick Add -->
+<button class="fab" onclick="onFabAdd()" title="รับพัสดุใหม่" aria-label="รับพัสดุใหม่"><i class="ti ti-plus"></i></button>
+<!-- FAB: Quick Scan -->
+<button class="fab-scan" onclick="onFabScan()" title="สแกนพัสดุ" aria-label="สแกนพัสดุ"><i class="ti ti-scan"></i></button>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav" role="navigation" aria-label="เมนูหลัก">
+  <div class="bottom-nav-items">
+    <button class="bn-item active" id="bn-dashboard" onclick="showSectionMobile('dashboard')">
+      <i class="ti ti-layout-dashboard"></i>หน้าหลัก
+    </button>
+    <button class="bn-item" id="bn-pending" onclick="showSectionMobile('pending')">
+      <i class="ti ti-packages"></i>รอรับ
+      <span class="bn-badge" id="bn-badge" style="display:none"></span>
+    </button>
+    <button class="bn-item" id="bn-scan" onclick="showSectionMobile('scan')">
+      <i class="ti ti-scan"></i>สแกน
+    </button>
+    <button class="bn-item" id="bn-history" onclick="showSectionMobile('history')">
+      <i class="ti ti-history"></i>ประวัติ
+    </button>
+    <button class="bn-item" id="bn-more" onclick="openDrawer()">
+      <i class="ti ti-menu-2"></i>เพิ่มเติม
+    </button>
+  </div>
+</nav>
+
+<div class="app">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-title">เลอ รัฟฟิเน่ สุขุมวิท 24</div>
+    <div class="logo-sub">ระบบจัดการพัสดุ</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">หลัก</div>
+    <div class="nav-item active" onclick="showSection('dashboard')"><i class="ti ti-layout-dashboard"></i> แดชบอร์ด</div>
+    <div class="nav-item" onclick="showSection('receive')"><i class="ti ti-package-import"></i> รับพัสดุ</div>
+    <div class="nav-item" onclick="showSection('scan')" style="background:rgba(184,150,62,.08);border-left-color:rgba(184,150,62,.4)"><i class="ti ti-scan" style="color:var(--gold2)"></i> <span style="color:var(--gold2)">สแกนพัสดุ</span> <span style="margin-left:auto;background:var(--gold);color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:600">NEW</span></div>
+    <div class="nav-item" onclick="showSection('pending')"><i class="ti ti-packages"></i> พัสดุรอรับ <span class="nav-badge" id="badge-pending">0</span></div>
+    <div class="nav-item" onclick="showSection('collect')"><i class="ti ti-package-export"></i> จ่ายพัสดุ</div>
+    <div class="nav-label">รายงาน</div>
+    <div class="nav-item" onclick="showSection('report')"><i class="ti ti-chart-bar"></i> รายงาน & สถิติ</div>
+    <div class="nav-item" onclick="showSection('history')"><i class="ti ti-history"></i> ประวัติทั้งหมด</div>
+    <div class="nav-label">เอกสาร</div>
+    <div class="nav-item" onclick="showSection('forms')"><i class="ti ti-file-text"></i> แบบฟอร์ม & SOP</div>
+    <div class="nav-item" onclick="showSection('settings')"><i class="ti ti-settings"></i> ตั้งค่า</div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+
+<!-- === DASHBOARD === -->
+<div id="sec-dashboard" class="section active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">แดชบอร์ด</div>
+      <div class="page-sub" id="today-date"></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
+      <button class="btn btn-primary btn-sm" onclick="showSection('receive');openReceiveModal()"><i class="ti ti-plus"></i> รับพัสดุใหม่</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label"><i class="ti ti-package"></i> พัสดุรอรับวันนี้</div>
+        <div class="kpi-value" id="kpi-today">0</div>
+        <div class="kpi-sub">รายการที่รับเข้าวันนี้</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label"><i class="ti ti-clock-hour4"></i> พัสดุค้างรับทั้งหมด</div>
+        <div class="kpi-value" id="kpi-pending" style="color:var(--amber)">0</div>
+        <div class="kpi-sub">รายการที่ยังไม่ถูกรับ</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label"><i class="ti ti-alert-triangle"></i> ค้างเกิน 7 วัน</div>
+        <div class="kpi-value" id="kpi-over7" style="color:var(--red)">0</div>
+        <div class="kpi-sub">ต้องแจ้งเตือนซ้ำ</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label"><i class="ti ti-check"></i> จ่ายออกแล้ว (เดือนนี้)</div>
+        <div class="kpi-value" id="kpi-collected" style="color:var(--green)">0</div>
+        <div class="kpi-sub">รายการสำเร็จ</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-chart-bar"></i> พัสดุรายเดือน</div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap"><canvas id="monthlyChart" role="img" aria-label="พัสดุรายเดือน">กราฟแสดงจำนวนพัสดุ</canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-chart-donut"></i> สัดส่วนบริษัทขนส่ง</div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap2"><canvas id="carrierChart" role="img" aria-label="สัดส่วนบริษัทขนส่ง">กราฟแสดงบริษัทขนส่ง</canvas></div>
+          <div id="carrier-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:12px;color:var(--muted)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-alert-circle"></i> พัสดุค้างรับ (เร่งด่วน)</div>
+        <button class="btn btn-outline btn-sm" onclick="showSection('pending')">ดูทั้งหมด</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ห้อง</th><th>ชื่อผู้รับ</th><th>บริษัท</th><th>ประเภท</th><th>วันที่รับ</th><th>ค้าง (วัน)</th><th>สถานะ</th></tr></thead>
+            <tbody id="urgent-table"><tr><td colspan="7" class="empty-state"><i class="ti ti-package-off"></i>ไม่มีพัสดุค้างรับ</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === RECEIVE === -->
+<div id="sec-receive" class="section">
+  <div class="page-header">
+    <div>
+      <div class="page-title">รับพัสดุ</div>
+      <div class="page-sub">บันทึกพัสดุที่ได้รับจากบริษัทขนส่ง</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openReceiveModal()"><i class="ti ti-plus"></i> รับพัสดุใหม่</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="filter-bar">
+      <input type="text" placeholder="ค้นหา ห้อง / ชื่อ / เลขพัสดุ..." id="search-receive" oninput="renderReceive()">
+      <select onchange="renderReceive()" id="filter-carrier">
+        <option value="">บริษัทขนส่งทั้งหมด</option>
+        <option>Kerry</option><option>Flash</option><option>DHL</option>
+        <option>ไปรษณีย์ไทย</option><option>J&T</option><option>Lazada</option><option>Shopee</option><option>อื่นๆ</option>
+      </select>
+      <select onchange="renderReceive()" id="filter-type">
+        <option value="">ประเภททั้งหมด</option>
+        <option>เอกสาร</option><option>กล่อง</option><option>อาหาร</option><option>พัสดุขนาดใหญ่</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="renderReceive()"><i class="ti ti-refresh"></i></button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>วันที่/เวลา</th><th>ห้อง</th><th>ชื่อเจ้าของ</th><th>บริษัทขนส่ง</th><th>เลขพัสดุ</th><th>ประเภท</th><th>ผู้รับ (พนักงาน)</th><th>สถานะ</th><th>ดำเนินการ</th></tr></thead>
+          <tbody id="receive-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === PENDING === -->
+<div id="sec-pending" class="section">
+  <div class="page-header">
+    <div>
+      <div class="page-title">พัสดุรอรับ</div>
+      <div class="page-sub">รายการพัสดุที่ยังไม่ถูกรับโดยเจ้าของห้อง</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" onclick="printPendingReport()"><i class="ti ti-printer"></i> พิมพ์รายงาน</button>
+      <button class="btn btn-outline btn-sm" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="tabs">
+      <div class="tab active" onclick="filterPending('all',this)">ทั้งหมด</div>
+      <div class="tab" onclick="filterPending('7',this)">ค้างเกิน 7 วัน</div>
+      <div class="tab" onclick="filterPending('15',this)">ค้างเกิน 15 วัน</div>
+      <div class="tab" onclick="filterPending('30',this)">ค้างเกิน 30 วัน</div>
+    </div>
+    <div class="alert alert-warning"><i class="ti ti-alert-triangle"></i> พัสดุค้างรับเกิน 15 วัน กรุณาแจ้งเตือนผู้พักอาศัยซ้ำทันที</div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>ห้อง</th><th>ชื่อเจ้าของ</th><th>บริษัทขนส่ง</th><th>ประเภท</th><th>วันที่รับ</th><th>ค้าง (วัน)</th><th>ที่จัดเก็บ</th><th>สถานะการแจ้ง</th><th>ดำเนินการ</th></tr></thead>
+          <tbody id="pending-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === COLLECT === -->
+<div id="sec-collect" class="section">
+  <div class="page-header">
+    <div>
+      <div class="page-title">จ่ายพัสดุ</div>
+      <div class="page-sub">บันทึกการรับพัสดุโดยเจ้าของห้อง</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-search"></i> ค้นหาพัสดุเพื่อจ่าย</div></div>
+        <div class="card-body">
+          <div class="form-group mb-12">
+            <label>ค้นหาด้วย เลขห้อง / ชื่อ / เลขพัสดุ</label>
+            <div class="scan-input-wrap">
+              <input type="text" id="collect-search" placeholder="เช่น 101, สมชาย, TH12345..." oninput="renderCollectSearch()">
+              <button type="button" class="scan-btn" onclick="openScanner('collect')" title="สแกนบาร์โค้ด"><i class="ti ti-scan"></i></button>
+            </div>
+          </div>
+          <div id="collect-results"></div>
+        </div>
+      </div>
+
+      <div class="card" id="collect-form-card" style="display:none">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-package-export"></i> บันทึกการรับพัสดุ</div>
+          <button class="close-btn" onclick="document.getElementById('collect-form-card').style.display='none'"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="card-body">
+          <div id="parcel-info-box" class="alert alert-info mb-12"></div>
+          <div class="form-group mb-12">
+            <label>ชื่อผู้รับพัสดุ <span class="required">*</span></label>
+            <input type="text" id="collector-name" placeholder="ชื่อผู้มารับ">
+          </div>
+          <div class="form-group mb-12">
+            <label>ความสัมพันธ์กับเจ้าของห้อง</label>
+            <select id="collector-relation">
+              <option>เจ้าของห้อง</option>
+              <option>ผู้เช่า</option>
+              <option>ครอบครัว</option>
+              <option>ตัวแทน (มีหนังสือมอบอำนาจ)</option>
+            </select>
+          </div>
+          <div id="poa-fields" style="display:none">
+            <div class="alert alert-warning mb-12"><i class="ti ti-file-certificate"></i> กรณีมอบอำนาจ – ต้องมีเอกสารครบถ้วน</div>
+            <div class="form-group mb-12">
+              <label>ชื่อผู้มอบอำนาจ</label>
+              <input type="text" id="poa-grantor" placeholder="ชื่อเจ้าของห้อง">
+            </div>
+            <div class="form-group mb-12">
+              <label>เลขบัตรประชาชนผู้รับมอบ</label>
+              <input type="text" id="poa-id" placeholder="xxx-xxxx-xxxxx-xx-x">
+            </div>
+          </div>
+          <div class="form-group mb-12">
+            <label>พนักงานผู้ส่งมอบ <span class="required">*</span></label>
+            <select id="staff-deliver">
+              <option>เลือกพนักงาน...</option>
+            </select>
+          </div>
+          <div class="form-group mb-12">
+            <label>ลายเซ็นผู้รับ <span class="required">*</span></label>
+            <canvas id="sigCanvas"></canvas>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <button class="btn btn-outline btn-sm" onclick="clearSig()"><i class="ti ti-eraser"></i> ลบ</button>
+            </div>
+          </div>
+          <div class="form-group mb-12">
+            <label>หมายเหตุ</label>
+            <textarea id="collect-note" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"></textarea>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="confirmCollect()"><i class="ti ti-check"></i> ยืนยันการรับพัสดุ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === REPORT === -->
+<div id="sec-report" class="section">
+  <div class="page-header">
+    <div><div class="page-title">รายงาน & สถิติ</div></div>
+    <div class="header-actions">
+      <select id="report-month" class="btn btn-outline btn-sm" onchange="renderReports()"></select>
+      <button class="btn btn-outline btn-sm" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">พัสดุรับเข้า</div>
+        <div class="kpi-value" id="r-total">0</div>
+        <div class="kpi-sub">รายการทั้งหมด</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">จ่ายออกแล้ว</div>
+        <div class="kpi-value" id="r-collected" style="color:var(--green)">0</div>
+        <div class="kpi-sub">รายการสำเร็จ</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">ยังค้างอยู่</div>
+        <div class="kpi-value" id="r-pending" style="color:var(--amber)">0</div>
+        <div class="kpi-sub">รายการค้างรับ</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">อัตราการรับ</div>
+        <div class="kpi-value" id="r-rate" style="color:var(--blue)">0%</div>
+        <div class="kpi-sub">Collection rate</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i> พัสดุรายวัน (เดือนนี้)</div></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="dailyChart" role="img" aria-label="พัสดุรายวัน">กราฟพัสดุรายวัน</canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-chart-donut-2"></i> ประเภทพัสดุ</div></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="typeChart" role="img" aria-label="ประเภทพัสดุ">กราฟประเภท</canvas></div></div>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <div class="card-header"><div class="card-title"><i class="ti ti-building"></i> ห้องที่รับพัสดุมากที่สุด (Top 10)</div></div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="roomChart" role="img" aria-label="ห้องที่รับพัสดุมากที่สุด">กราฟรายห้อง</canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- === HISTORY === -->
+<div id="sec-history" class="section">
+  <div class="page-header">
+    <div><div class="page-title">ประวัติทั้งหมด</div></div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" onclick="exportExcel()"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="filter-bar">
+      <input type="text" placeholder="ค้นหา..." id="search-history" oninput="renderHistory()">
+      <select onchange="renderHistory()" id="filter-status-h">
+        <option value="">สถานะทั้งหมด</option>
+        <option value="pending">รอรับ</option>
+        <option value="collected">รับแล้ว</option>
+      </select>
+      <input type="date" id="filter-date-h" onchange="renderHistory()">
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>วันที่รับเข้า</th><th>ห้อง</th><th>ชื่อเจ้าของ</th><th>บริษัทขนส่ง</th><th>เลขพัสดุ</th><th>ประเภท</th><th>รูป</th><th>สถานะ</th><th>วันที่รับออก</th><th>ผู้รับ</th><th></th></tr></thead>
+          <tbody id="history-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === FORMS === -->
+<div id="sec-forms" class="section">
+  <div class="page-header">
+    <div><div class="page-title">แบบฟอร์ม & SOP</div></div>
+  </div>
+  <div class="content">
+    <div class="grid-3">
+      <div class="card" style="cursor:pointer" onclick="printForm('receive-form')">
+        <div class="card-body" style="text-align:center;padding:24px">
+          <i class="ti ti-file-plus" style="font-size:36px;color:var(--navy);opacity:.6;display:block;margin-bottom:10px"></i>
+          <div style="font-weight:600;color:var(--navy)">แบบฟอร์มรับพัสดุ</div>
+          <div class="text-sm text-muted mt-12">บันทึกการรับพัสดุจากบริษัทขนส่ง</div>
+          <button class="btn btn-outline btn-sm mt-12"><i class="ti ti-printer"></i> พิมพ์</button>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="printForm('collect-form')">
+        <div class="card-body" style="text-align:center;padding:24px">
+          <i class="ti ti-file-check" style="font-size:36px;color:var(--navy);opacity:.6;display:block;margin-bottom:10px"></i>
+          <div style="font-weight:600;color:var(--navy)">แบบฟอร์มจ่ายพัสดุ</div>
+          <div class="text-sm text-muted mt-12">บันทึกการรับพัสดุโดยเจ้าของห้อง</div>
+          <button class="btn btn-outline btn-sm mt-12"><i class="ti ti-printer"></i> พิมพ์</button>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="printForm('poa-form')">
+        <div class="card-body" style="text-align:center;padding:24px">
+          <i class="ti ti-file-certificate" style="font-size:36px;color:var(--navy);opacity:.6;display:block;margin-bottom:10px"></i>
+          <div style="font-weight:600;color:var(--navy)">หนังสือมอบอำนาจรับพัสดุ</div>
+          <div class="text-sm text-muted mt-12">กรณีเจ้าของห้องไม่สะดวกมารับเอง</div>
+          <button class="btn btn-outline btn-sm mt-12"><i class="ti ti-printer"></i> พิมพ์</button>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="printPendingReport()">
+        <div class="card-body" style="text-align:center;padding:24px">
+          <i class="ti ti-report" style="font-size:36px;color:var(--amber);opacity:.7;display:block;margin-bottom:10px"></i>
+          <div style="font-weight:600;color:var(--navy)">รายงานพัสดุค้างรับ</div>
+          <div class="text-sm text-muted mt-12">รายการพัสดุที่ยังไม่ถูกรับ</div>
+          <button class="btn btn-outline btn-sm mt-12"><i class="ti ti-printer"></i> พิมพ์</button>
+        </div>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="showSOP()">
+        <div class="card-body" style="text-align:center;padding:24px">
+          <i class="ti ti-list-check" style="font-size:36px;color:var(--green);opacity:.7;display:block;margin-bottom:10px"></i>
+          <div style="font-weight:600;color:var(--navy)">SOP การรับ–จ่ายพัสดุ</div>
+          <div class="text-sm text-muted mt-12">ขั้นตอนปฏิบัติงานมาตรฐาน</div>
+          <button class="btn btn-success btn-sm mt-12"><i class="ti ti-eye"></i> ดู SOP</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="text-align:center;padding:24px">
+          <i class="ti ti-message-circle" style="font-size:36px;color:var(--blue);opacity:.7;display:block;margin-bottom:10px"></i>
+          <div style="font-weight:600;color:var(--navy)">ข้อความแจ้งเตือน</div>
+          <div class="text-sm text-muted mt-12">ตัวอย่างข้อความแจ้ง Line/SMS</div>
+          <button class="btn btn-outline btn-sm mt-12" onclick="showNotifTemplate()"><i class="ti ti-eye"></i> ดูตัวอย่าง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === SETTINGS === -->
+<div id="sec-settings" class="section">
+  <div class="page-header">
+    <div><div class="page-title">ตั้งค่าระบบ</div></div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()"><i class="ti ti-device-floppy"></i> บันทึก</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-users"></i> รายชื่อพนักงาน</div></div>
+        <div class="card-body">
+          <div id="staff-list" style="margin-bottom:12px"></div>
+          <div class="flex gap-8">
+            <input type="text" id="new-staff" placeholder="ชื่อพนักงาน" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit">
+            <button class="btn btn-primary btn-sm" onclick="addStaff()"><i class="ti ti-plus"></i> เพิ่ม</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-building"></i> พื้นที่จัดเก็บ</div></div>
+        <div class="card-body">
+          <div class="form-group mb-12">
+            <label>ตู้/ชั้นสำหรับเอกสาร</label>
+            <input type="text" value="ชั้น A – ตู้ 1" id="store-doc">
+          </div>
+          <div class="form-group mb-12">
+            <label>ตู้/ชั้นสำหรับกล่อง</label>
+            <input type="text" value="ชั้น B – ตู้ 2-4" id="store-box">
+          </div>
+          <div class="form-group mb-12">
+            <label>ตู้เย็น / ห้องเย็น</label>
+            <input type="text" value="ตู้เย็น – ห้องพนักงาน" id="store-food">
+          </div>
+          <div class="form-group">
+            <label>พื้นที่พัสดุขนาดใหญ่</label>
+            <input type="text" value="ลาน C – ด้านหน้าล็อบบี้" id="store-large">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card mt-16">
+      <div class="card-header"><div class="card-title"><i class="ti ti-trash"></i> จัดการข้อมูล</div></div>
+      <div class="card-body">
+        <div class="flex gap-8">
+          <button class="btn btn-danger btn-sm" onclick="if(confirm('ล้างข้อมูลทั้งหมด?'))clearAllData()"><i class="ti ti-trash"></i> ล้างข้อมูลทั้งหมด</button>
+          <button class="btn btn-outline btn-sm" onclick="loadDemoData()"><i class="ti ti-database-import"></i> โหลดข้อมูลตัวอย่าง</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === SCAN === -->
+<div id="sec-scan" class="section">
+  <div class="page-header">
+    <div>
+      <div class="page-title">สแกนพัสดุ</div>
+      <div class="page-sub">สแกน Barcode / QR Code จากกล้องมือถือ</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="scan-page-hero">
+      <i class="ti ti-scan"></i>
+      <h2>สแกนเลขพัสดุ</h2>
+      <p>รองรับ Barcode 1D (Code 128, Code 39) และ QR Code</p>
+    </div>
+
+    <div class="grid-2" style="gap:14px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-package-import"></i> สแกนเพื่อรับพัสดุ</div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">สแกนบาร์โค้ดบนหน้าใบปะหน้าพัสดุ แล้วกรอกข้อมูลเพิ่มเติม</p>
+          <button class="scan-btn" style="width:100%;justify-content:center;padding:12px" onclick="openScanner('receive')">
+            <i class="ti ti-camera"></i> เปิดกล้องสแกน – รับพัสดุ
+          </button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><i class="ti ti-package-export"></i> สแกนเพื่อจ่ายพัสดุ</div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">สแกนเลขพัสดุเพื่อค้นหารายการที่ค้างอยู่ในระบบ</p>
+          <button class="scan-btn" style="width:100%;justify-content:center;padding:12px;background:var(--green)" onclick="openScanner('collect')">
+            <i class="ti ti-camera"></i> เปิดกล้องสแกน – จ่ายพัสดุ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-keyboard"></i> พิมพ์เลขพัสดุด้วยตนเอง</div></div>
+      <div class="card-body">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input type="text" id="manual-tracking" placeholder="พิมพ์หรือวางเลขพัสดุที่นี่..." style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit">
+          <button class="btn btn-primary" onclick="processManualTracking()"><i class="ti ti-search"></i> ค้นหา</button>
+        </div>
+        <div id="manual-scan-result"></div>
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <div class="card-header"><div class="card-title"><i class="ti ti-history"></i> ประวัติการสแกนล่าสุด</div></div>
+      <div class="card-body" style="padding:0">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr><th style="padding:10px 14px;text-align:left;background:#f8f7f3;border-bottom:1px solid var(--border);font-size:12px;color:var(--navy)">เวลา</th><th style="padding:10px 14px;text-align:left;background:#f8f7f3;border-bottom:1px solid var(--border);font-size:12px;color:var(--navy)">เลขพัสดุ</th><th style="padding:10px 14px;text-align:left;background:#f8f7f3;border-bottom:1px solid var(--border);font-size:12px;color:var(--navy)">ผล</th><th style="padding:10px 14px;text-align:left;background:#f8f7f3;border-bottom:1px solid var(--border);font-size:12px;color:var(--navy)">ดำเนินการ</th></tr></thead>
+          <tbody id="scan-history-table"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">ยังไม่มีประวัติการสแกน</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+</div><!-- end app -->
+
+<!-- ===== SCANNER OVERLAY ===== -->
+<div id="scan-overlay">
+  <div class="scan-label" id="scan-overlay-label">สแกนบาร์โค้ด / QR Code</div>
+  <div class="scan-viewport">
+    <video id="scan-video" autoplay muted playsinline></video>
+    <div class="scan-frame">
+      <div class="scan-corner sc-tl"></div>
+      <div class="scan-corner sc-tr"></div>
+      <div class="scan-corner sc-bl"></div>
+      <div class="scan-corner sc-br"></div>
+      <div class="scan-line"></div>
+    </div>
+    <div id="scan-flash" style="display:none;position:absolute;inset:0;background:rgba(184,150,62,.3);border-radius:14px"></div>
+  </div>
+  <div class="scan-sub">จ่อกล้องไปที่บาร์โค้ดบนใบปะหน้าพัสดุ</div>
+  <div class="scan-status" id="scan-status">กำลังเริ่มกล้อง...</div>
+  <div class="scan-manual-row">
+    <input type="text" id="scan-manual-input" placeholder="หรือพิมพ์เลขพัสดุ..." onkeydown="if(event.key==='Enter')submitManualScan()">
+    <button class="scan-btn" onclick="submitManualScan()">ตกลง</button>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:10px">
+    <button class="scan-close-btn" onclick="switchCamera()" id="switch-cam-btn" style="display:none"><i class="ti ti-switch-camera"></i> สลับกล้อง</button>
+    <button class="scan-close-btn" onclick="toggleTorch()" id="torch-btn" style="display:none" title="เปิดไฟฉาย"><i class="ti ti-bolt"></i> ไฟฉาย</button>
+    <button class="scan-close-btn" onclick="closeScanner()"><i class="ti ti-x"></i> ปิด</button>
+  </div>
+</div>
+
+<!-- ===== RECEIVE MODAL ===== -->
+<div class="modal-overlay" id="receive-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-package-import"></i> บันทึกรับพัสดุใหม่</div>
+      <button class="close-btn" onclick="closeReceiveModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid mb-12">
+        <div class="form-group">
+          <label>วันที่รับ <span class="required">*</span></label>
+          <input type="date" id="r-date">
+        </div>
+        <div class="form-group">
+          <label>เวลาที่รับ <span class="required">*</span></label>
+          <input type="time" id="r-time">
+        </div>
+      </div>
+      <div class="form-grid mb-12">
+        <div class="form-group">
+          <label>บริษัทขนส่ง <span class="required">*</span></label>
+          <select id="r-carrier">
+            <option>Kerry</option><option>Flash</option><option>DHL</option>
+            <option>ไปรษณีย์ไทย</option><option>J&T</option><option>Lazada</option>
+            <option>Shopee</option><option>อื่นๆ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>เลขพัสดุ (Tracking No.) <span class="required">*</span></label>
+          <div class="scan-input-wrap">
+            <input type="text" id="r-tracking" placeholder="TH12345678...">
+            <button type="button" class="scan-btn" onclick="openScanner('receive-modal')" title="สแกนบาร์โค้ด"><i class="ti ti-scan"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="form-grid mb-12">
+        <div class="form-group">
+          <label>เลขห้อง <span class="required">*</span></label>
+          <input type="text" id="r-room" placeholder="เช่น 101, 2304">
+        </div>
+        <div class="form-group">
+          <label>ชื่อเจ้าของห้อง / ผู้รับ <span class="required">*</span></label>
+          <input type="text" id="r-owner" placeholder="ชื่อ-นามสกุล">
+        </div>
+      </div>
+      <div class="form-grid mb-12">
+        <div class="form-group">
+          <label>ประเภทพัสดุ <span class="required">*</span></label>
+          <select id="r-type">
+            <option>กล่อง</option><option>เอกสาร</option><option>อาหาร</option><option>พัสดุขนาดใหญ่</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>พนักงานผู้รับพัสดุ <span class="required">*</span></label>
+          <select id="r-staff"><option>เลือกพนักงาน...</option></select>
+        </div>
+      </div>
+      <div class="form-group mb-12">
+        <label>ที่จัดเก็บ</label>
+        <input type="text" id="r-location" placeholder="เช่น ชั้น B – ตู้ 3">
+      </div>
+      <div class="form-group mb-12">
+        <label>ถ่ายรูปพัสดุ (กรณีมีรอยเสียหาย)</label>
+        <div class="upload-zone" onclick="document.getElementById('photo-input').click()">
+          <i class="ti ti-camera"></i>
+          คลิกเพื่อเลือกรูปภาพ (PNG/JPG)
+          <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="previewPhotos(this)">
+        </div>
+        <div class="thumb-grid" id="photo-preview"></div>
+      </div>
+      <div class="form-group mb-12">
+        <label>หมายเหตุ / สภาพพัสดุ</label>
+        <textarea id="r-note" placeholder="ระบุสภาพพัสดุ รอยเสียหาย หรือข้อมูลเพิ่มเติม..."></textarea>
+      </div>
+      <div class="divider"></div>
+      <div class="section-sub-title">ข้อความแจ้งเตือนผู้รับ</div>
+      <div class="notif-box" id="notif-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeReceiveModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveParcel()"><i class="ti ti-device-floppy"></i> บันทึกรับพัสดุ</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF MODAL -->
+<div class="modal-overlay" id="notif-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-message-circle"></i> ตัวอย่างข้อความแจ้งเตือน</div>
+      <button class="close-btn" onclick="closeModal('notif-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="section-sub-title">Line OA / SMS</div>
+      <div class="notif-box" id="notif-modal-body"></div>
+      <button class="btn btn-outline btn-sm mt-12" onclick="copyNotif()"><i class="ti ti-copy"></i> คัดลอกข้อความ</button>
+    </div>
+  </div>
+</div>
+
+<!-- SOP MODAL -->
+<div class="modal-overlay" id="sop-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-list-check"></i> SOP การรับ–จ่ายพัสดุ</div>
+      <button class="close-btn" onclick="closeModal('sop-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" style="font-size:13px;line-height:1.8">
+      <div style="font-weight:600;color:var(--navy);margin-bottom:8px">เลอ รัฟฟิเน่ สุขุมวิท 24 | ขั้นตอนปฏิบัติงานมาตรฐาน</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:14px">SOP-NJP-001 | แก้ไขล่าสุด: มิถุนายน 2568</div>
+
+      <div style="font-weight:600;color:var(--navy);margin-bottom:6px">ขั้นตอนที่ 1 – รับพัสดุจากบริษัทขนส่ง</div>
+      <ol style="padding-left:18px;margin-bottom:14px">
+        <li>ตรวจสอบสภาพพัสดุ – รอยเสียหาย, บุบ, เปียกชื้น</li>
+        <li>ถ่ายรูปทันทีหากพบความผิดปกติ</li>
+        <li>บันทึกข้อมูลลงระบบ: ห้อง, บริษัทขนส่ง, เลขพัสดุ, ประเภท, เวลา</li>
+        <li>จัดเก็บตามประเภท (เอกสาร/กล่อง/อาหาร/ขนาดใหญ่)</li>
+        <li>ส่งข้อความแจ้งเตือนผู้รับทาง Line OA / SMS ทันที</li>
+      </ol>
+
+      <div style="font-weight:600;color:var(--navy);margin-bottom:6px">ขั้นตอนที่ 2 – จัดเก็บพัสดุ</div>
+      <ol style="padding-left:18px;margin-bottom:14px">
+        <li>วางพัสดุในพื้นที่ที่กำหนดตามประเภท</li>
+        <li>ติดสติ๊กเกอร์ระบุ: เลขห้อง, วันที่รับ, บริษัทขนส่ง</li>
+        <li>เรียงลำดับตามวันที่รับ (ของที่รับก่อน วางด้านนอก)</li>
+        <li>อาหาร/ยา → ตู้เย็นทันที และแจ้งผู้รับเร่งด่วน</li>
+      </ol>
+
+      <div style="font-weight:600;color:var(--navy);margin-bottom:6px">ขั้นตอนที่ 3 – จ่ายพัสดุ</div>
+      <ol style="padding-left:18px;margin-bottom:14px">
+        <li>ตรวจสอบตัวตนผู้รับ – บัตรประชาชนหรือบัตรผ่าน</li>
+        <li>กรณีมอบอำนาจ – ขอดูหนังสือมอบอำนาจและสำเนาบัตร</li>
+        <li>บันทึกชื่อ-ลายเซ็นผู้รับในระบบ</li>
+        <li>อัปเดตสถานะพัสดุเป็น "รับแล้ว" ในระบบ</li>
+      </ol>
+
+      <div style="font-weight:600;color:var(--navy);margin-bottom:6px">ขั้นตอนที่ 4 – ติดตามพัสดุค้างรับ</div>
+      <ol style="padding-left:18px">
+        <li>ค้างเกิน 3 วัน → แจ้งเตือนครั้งที่ 2</li>
+        <li>ค้างเกิน 7 วัน → แจ้งเตือนครั้งที่ 3 (ทาง SMS/โทรศัพท์)</li>
+        <li>ค้างเกิน 15 วัน → แจ้งนิติฯ เพื่อติดตามเป็นลายลักษณ์อักษร</li>
+        <li>ค้างเกิน 30 วัน → จัดทำบันทึกและรายงานผู้จัดการ</li>
+      </ol>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="window.print()"><i class="ti ti-printer"></i> พิมพ์</button>
+      <button class="btn btn-primary" onclick="closeModal('sop-modal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;flex-direction:column;align-items:center;justify-content:center" onclick="closeLightbox(event)">
+  <div style="position:relative;max-width:92vw;max-height:85vh;display:flex;align-items:center;justify-content:center">
+    <img id="lb-img" src="" style="max-width:92vw;max-height:82vh;border-radius:10px;object-fit:contain;display:block;user-select:none">
+  </div>
+  <!-- nav arrows -->
+  <button id="lb-prev" onclick="event.stopPropagation();lbNav(-1)" style="position:fixed;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center"><i class="ti ti-chevron-left"></i></button>
+  <button id="lb-next" onclick="event.stopPropagation();lbNav(1)" style="position:fixed;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center"><i class="ti ti-chevron-right"></i></button>
+  <!-- counter & actions -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center">
+    <span id="lb-counter" style="color:rgba(255,255,255,.6);font-size:13px"></span>
+    <button onclick="event.stopPropagation();lbDownload()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:5px;font-family:inherit"><i class="ti ti-download"></i> บันทึกรูป</button>
+    <button onclick="event.stopPropagation();closeLightbox()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:5px;font-family:inherit"><i class="ti ti-x"></i> ปิด</button>
+  </div>
+  <!-- thumbnail strip -->
+  <div id="lb-strip" style="position:fixed;bottom:64px;left:50%;transform:translateX(-50%);display:flex;gap:6px;max-width:90vw;overflow-x:auto;padding:4px"></div>
+</div>
+
+<!-- PARCEL DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-package"></i> รายละเอียดพัสดุ</div>
+      <button class="close-btn" onclick="closeModal('detail-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('detail-modal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA STORE =====
+let parcels = JSON.parse(localStorage.getItem('lr-parcels') || '[]');
+let staff = JSON.parse(localStorage.getItem('lr-staff') || '["คุณสมศักดิ์","คุณวิไล","คุณอนุชา","คุณพิมพ์ชนก"]');
+let settings = JSON.parse(localStorage.getItem('lr-settings') || '{}');
+let sigPad = {drawing:false,ctx:null};
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('today-date').textContent = 'วันที่ ' + new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  initSigPad();
+  populateMonthSelector();
+  renderAll();
+  updateBadges();
+  setupNotifPreview();
+});
+
+function renderAll(){
+  renderDashboard();
+  renderReceive();
+  renderPending();
+  renderHistory();
+  renderReports();
+  renderStaffSettings();
+  populateStaffDropdowns();
+}
+
+// ===== SECTION NAV =====
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  renderAll();
+}
+
+// ===== UTILS =====
+function today(){return new Date().toISOString().split('T')[0]}
+function now(){return new Date().toTimeString().slice(0,5)}
+function daysDiff(d){return Math.floor((new Date()-new Date(d))/(1000*60*60*24))}
+function fmtDate(d){if(!d)return'-';return new Date(d).toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'})}
+function fmtDateTime(d,t){return fmtDate(d)+(t?' '+t:'')}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+
+function carrierBadge(c){
+  const map={'Kerry':'badge-kerry','Flash':'badge-flash','DHL':'badge-dhl','ไปรษณีย์ไทย':'badge-thpost','J&T':'badge-jt','Lazada':'badge-lazada','Shopee':'badge-shopee'};
+  return `<span class="badge ${map[c]||'badge-other'}">${c}</span>`;
+}
+function typeBadge(t){
+  const map={'เอกสาร':'badge-doc','กล่อง':'badge-box','อาหาร':'badge-food','พัสดุขนาดใหญ่':'badge-large'};
+  return `<span class="badge ${map[t]||'badge-other'}">${t}</span>`;
+}
+function statusBadge(s){
+  if(s==='collected') return '<span class="badge badge-collected"><span class="status-dot dot-green"></span>รับแล้ว</span>';
+  return '<span class="badge badge-pending"><span class="status-dot dot-amber"></span>รอรับ</span>';
+}
+function overdueClass(days){
+  if(days>=30) return 'overdue-30';
+  if(days>=15) return 'overdue-15';
+  if(days>=7) return 'overdue-7';
+  return '';
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  const now2 = today();
+  const todayP = parcels.filter(p=>p.receiveDate===now2);
+  const pending = parcels.filter(p=>p.status==='pending');
+  const over7 = pending.filter(p=>daysDiff(p.receiveDate)>=7);
+  const thisMonth = new Date().getMonth();
+  const collected = parcels.filter(p=>p.status==='collected'&&new Date(p.collectDate).getMonth()===thisMonth);
+
+  document.getElementById('kpi-today').textContent = todayP.length;
+  document.getElementById('kpi-pending').textContent = pending.length;
+  document.getElementById('kpi-over7').textContent = over7.length;
+  document.getElementById('kpi-collected').textContent = collected.length;
+
+  // Urgent table
+  const urgent = pending.filter(p=>daysDiff(p.receiveDate)>=3).sort((a,b)=>new Date(a.receiveDate)-new Date(b.receiveDate)).slice(0,8);
+  const tb = document.getElementById('urgent-table');
+  if(!urgent.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)"><i class="ti ti-check" style="display:block;font-size:24px;margin-bottom:6px;opacity:.4"></i>ไม่มีพัสดุค้างรับเร่งด่วน</td></tr>';return;}
+  tb.innerHTML = urgent.map(p=>{
+    const days=daysDiff(p.receiveDate);
+    return `<tr class="${overdueClass(days)}"><td>${p.room}</td><td>${p.owner}</td><td>${carrierBadge(p.carrier)}</td><td>${typeBadge(p.type)}</td><td>${fmtDate(p.receiveDate)}</td><td style="font-weight:600;color:${days>=15?'var(--red)':days>=7?'var(--amber)':'var(--text)'}">⏱ ${days} วัน</td><td>${statusBadge(p.status)}</td></tr>`;
+  }).join('');
+
+  renderMonthlyChart();
+  renderCarrierChart();
+}
+
+let monthlyChartInst=null, carrierChartInst=null;
+function renderMonthlyChart(){
+  const months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const year=new Date().getFullYear();
+  const counts=months.map((_,i)=>parcels.filter(p=>new Date(p.receiveDate).getFullYear()===year&&new Date(p.receiveDate).getMonth()===i).length);
+  if(monthlyChartInst)monthlyChartInst.destroy();
+  monthlyChartInst=new Chart(document.getElementById('monthlyChart'),{
+    type:'bar',
+    data:{labels:months,datasets:[{label:'พัสดุรับเข้า',data:counts,backgroundColor:'rgba(26,39,68,.75)',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+}
+function renderCarrierChart(){
+  const carriers=['Kerry','Flash','DHL','ไปรษณีย์ไทย','J&T','Lazada','Shopee','อื่นๆ'];
+  const colors=['#ff6f00','#f50057','#ffcc00','#1565c0','#f44336','#0f146b','#ee4d2d','#888'];
+  const counts=carriers.map(c=>parcels.filter(p=>p.carrier===c).length);
+  const active=carriers.filter((_,i)=>counts[i]>0);
+  const acols=colors.filter((_,i)=>counts[i]>0);
+  const adata=counts.filter(v=>v>0);
+  if(carrierChartInst)carrierChartInst.destroy();
+  if(!adata.length)return;
+  carrierChartInst=new Chart(document.getElementById('carrierChart'),{
+    type:'doughnut',
+    data:{labels:active,datasets:[{data:adata,backgroundColor:acols,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}
+  });
+  const total=adata.reduce((a,b)=>a+b,0);
+  document.getElementById('carrier-legend').innerHTML=active.map((c,i)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${acols[i]}"></span>${c} ${Math.round(adata[i]/total*100)}%</span>`).join('');
+}
+
+// ===== RECEIVE =====
+function openReceiveModal(){
+  document.getElementById('r-date').value=today();
+  document.getElementById('r-time').value=now();
+  document.getElementById('photo-preview').innerHTML='';
+  updateNotifPreview();
+  document.getElementById('receive-modal').classList.add('show');
+}
+function closeReceiveModal(){document.getElementById('receive-modal').classList.remove('show')}
+
+function setupNotifPreview(){
+  ['r-room','r-carrier','r-date','r-time','r-type'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change',updateNotifPreview);
+    if(el) el.addEventListener('input',updateNotifPreview);
+  });
+}
+function updateNotifPreview(){
+  const room=document.getElementById('r-room')?.value||'_';
+  const carrier=document.getElementById('r-carrier')?.value||'_';
+  const date=fmtDate(document.getElementById('r-date')?.value)||'_';
+  const type=document.getElementById('r-type')?.value||'_';
+  const msg=`📦 แจ้งพัสดุเข้า – เลอ รัฟฟิเน่ สุขุมวิท 24
+
+เรียน เจ้าของห้อง ${room}
+
+มีพัสดุ (${type}) จาก ${carrier}
+มาถึงเมื่อวันที่ ${date}
+
+กรุณารับพัสดุได้ที่เคาน์เตอร์นิติบุคคล
+เวลาทำการ 08:00–20:00 น.
+
+📞 02-xxx-xxxx | นิติบุคคลเลอ รัฟฟิเน่`;
+  const box=document.getElementById('notif-preview');
+  if(box)box.textContent=msg;
+}
+
+let pendingPhotos=[];
+
+function previewPhotos(input){
+  const preview=document.getElementById('photo-preview');
+  preview.innerHTML='';
+  pendingPhotos=[];
+  const files=Array.from(input.files);
+  if(!files.length)return;
+
+  const btn=document.querySelector('.modal-footer .btn-primary');
+  if(btn){btn.textContent='กำลังโหลดรูป...';btn.disabled=true;}
+
+  let done=0;
+  files.forEach((f,idx)=>{
+    // Compress: resize to max 900px and quality 0.75 before storing
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const origSrc=e.target.result;
+      const imgEl=new Image();
+      imgEl.onload=()=>{
+        const MAX=900;
+        let w=imgEl.width,h=imgEl.height;
+        if(w>MAX||h>MAX){const r=MAX/Math.max(w,h);w=Math.round(w*r);h=Math.round(h*r);}
+        const cv=document.createElement('canvas');
+        cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(imgEl,0,0,w,h);
+        const b64=cv.toDataURL('image/jpeg',0.75);
+        pendingPhotos[idx]=b64;
+        done++;
+        // Show thumb
+        const thumb=document.createElement('img');
+        thumb.src=b64;thumb.className='thumb';
+        thumb.style.cursor='pointer';
+        thumb.onclick=()=>openLightbox([b64],0);
+        preview.appendChild(thumb);
+        if(done===files.length){
+          if(btn){btn.innerHTML='<i class="ti ti-device-floppy"></i> บันทึกรับพัสดุ';btn.disabled=false;}
+        }
+      };
+      imgEl.src=origSrc;
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function saveParcel(){
+  const room=document.getElementById('r-room').value.trim();
+  const owner=document.getElementById('r-owner').value.trim();
+  const carrier=document.getElementById('r-carrier').value;
+  const tracking=document.getElementById('r-tracking').value.trim();
+  const staff2=document.getElementById('r-staff').value;
+  if(!room||!owner||!tracking||staff2==='เลือกพนักงาน...'){
+    alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');return;
+  }
+  const p={
+    id:uid(),
+    receiveDate:document.getElementById('r-date').value,
+    receiveTime:document.getElementById('r-time').value,
+    carrier,tracking,room,owner,
+    type:document.getElementById('r-type').value,
+    staff:staff2,
+    location:document.getElementById('r-location').value,
+    note:document.getElementById('r-note').value,
+    photos:pendingPhotos.filter(Boolean),
+    status:'pending',
+    notified:true,
+    collectDate:null,collectTime:null,collector:null,relation:null,signature:null
+  };
+  pendingPhotos=[];
+  parcels.unshift(p);
+  save();
+  closeReceiveModal();
+  renderAll();
+  updateBadges();
+  alert('✅ บันทึกรับพัสดุสำเร็จ! ห้อง '+room+(p.photos.length?' ('+p.photos.length+' รูป)':''));
+}
+
+function renderReceive(){
+  const q=document.getElementById('search-receive')?.value.toLowerCase()||'';
+  const fc=document.getElementById('filter-carrier')?.value||'';
+  const ft=document.getElementById('filter-type')?.value||'';
+  let data=[...parcels].filter(p=>{
+    const match=!q||p.room.toLowerCase().includes(q)||p.owner.toLowerCase().includes(q)||p.tracking.toLowerCase().includes(q);
+    return match&&(!fc||p.carrier===fc)&&(!ft||p.type===ft);
+  });
+  const tb=document.getElementById('receive-table');
+  if(!tb)return;
+  if(!data.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted)">ไม่พบรายการ</td></tr>';return;}
+  tb.innerHTML=data.map((p,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td style="white-space:nowrap">${fmtDate(p.receiveDate)}<br><span class="text-sm text-muted">${p.receiveTime}</span></td>
+      <td><strong>${p.room}</strong></td>
+      <td>${p.owner}</td>
+      <td>${carrierBadge(p.carrier)}</td>
+      <td style="font-family:monospace;font-size:12px">${p.tracking}</td>
+      <td>${typeBadge(p.type)}</td>
+      <td>${p.staff}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="showDetail('${p.id}')"><i class="ti ti-eye"></i></button>
+        <button class="btn btn-outline btn-sm" onclick="showNotif('${p.id}')"><i class="ti ti-message-circle"></i></button>
+        ${p.status==='pending'?`<button class="btn btn-success btn-sm" onclick="quickCollect('${p.id}')"><i class="ti ti-check"></i></button>`:''}
+      </td>
+    </tr>`).join('');
+}
+
+// ===== PENDING =====
+let pendingFilter='all';
+function filterPending(f,el){
+  pendingFilter=f;
+  document.querySelectorAll('#sec-pending .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderPending();
+}
+function renderPending(){
+  let data=parcels.filter(p=>p.status==='pending');
+  if(pendingFilter!=='all') data=data.filter(p=>daysDiff(p.receiveDate)>=parseInt(pendingFilter));
+  data.sort((a,b)=>new Date(a.receiveDate)-new Date(b.receiveDate));
+  const tb=document.getElementById('pending-table');
+  if(!tb)return;
+  if(!data.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted)"><i class="ti ti-package-off" style="display:block;font-size:24px;margin-bottom:6px;opacity:.4"></i>ไม่มีพัสดุค้างรับ</td></tr>';return;}
+  tb.innerHTML=data.map((p,i)=>{
+    const days=daysDiff(p.receiveDate);
+    return `<tr class="${overdueClass(days)}">
+      <td>${i+1}</td>
+      <td><strong>${p.room}</strong></td>
+      <td>${p.owner}</td>
+      <td>${carrierBadge(p.carrier)}</td>
+      <td>${typeBadge(p.type)}</td>
+      <td>${fmtDate(p.receiveDate)}</td>
+      <td style="font-weight:600;color:${days>=15?'var(--red)':days>=7?'var(--amber)':'inherit'}">⏱ ${days} วัน</td>
+      <td style="font-size:12px">${p.location||'-'}</td>
+      <td><span class="badge ${p.notified?'badge-collected':'badge-pending'}">${p.notified?'แจ้งแล้ว':'ยังไม่แจ้ง'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="showNotif('${p.id}')"><i class="ti ti-message-circle"></i> แจ้ง</button>
+        <button class="btn btn-success btn-sm" onclick="quickCollect('${p.id}')"><i class="ti ti-check"></i> จ่าย</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== COLLECT =====
+let selectedParcelId=null;
+function renderCollectSearch(){
+  const q=document.getElementById('collect-search').value.toLowerCase();
+  const res=document.getElementById('collect-results');
+  if(!q){res.innerHTML='';document.getElementById('collect-form-card').style.display='none';return;}
+  const matches=parcels.filter(p=>p.status==='pending'&&(p.room.toLowerCase().includes(q)||p.owner.toLowerCase().includes(q)||p.tracking.toLowerCase().includes(q)));
+  if(!matches.length){res.innerHTML='<div class="text-muted text-sm" style="padding:8px">ไม่พบพัสดุค้างรับ</div>';return;}
+  res.innerHTML=matches.map(p=>`
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="selectParcel('${p.id}')" class="hover-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <strong>ห้อง ${p.room}</strong> – ${p.owner}
+        ${carrierBadge(p.carrier)} ${typeBadge(p.type)}
+      </div>
+      <div class="text-sm text-muted">รับเข้า: ${fmtDate(p.receiveDate)} • เลขพัสดุ: ${p.tracking} • ค้าง ${daysDiff(p.receiveDate)} วัน</div>
+    </div>`).join('');
+}
+
+function selectParcel(id){
+  selectedParcelId=id;
+  const p=parcels.find(x=>x.id===id);
+  document.getElementById('parcel-info-box').innerHTML=`<i class="ti ti-package"></i> <strong>ห้อง ${p.room}</strong> – ${p.owner} | ${p.carrier} | ${typeBadge(p.type)} | รับเข้า ${fmtDate(p.receiveDate)}`;
+  document.getElementById('collect-form-card').style.display='block';
+  clearSig();
+}
+
+function quickCollect(id){
+  showSection('collect');
+  document.getElementById('collect-search').value='';
+  selectParcel(id);
+  document.getElementById('collect-results').innerHTML='';
+}
+
+document.getElementById('collector-relation')?.addEventListener('change',function(){
+  document.getElementById('poa-fields').style.display=this.value.includes('ตัวแทน')?'block':'none';
+});
+
+function confirmCollect(){
+  if(!selectedParcelId)return;
+  const name=document.getElementById('collector-name').value.trim();
+  const staff2=document.getElementById('staff-deliver').value;
+  if(!name||staff2==='เลือกพนักงาน...'){alert('กรุณากรอกชื่อผู้รับและพนักงานผู้ส่งมอบ');return;}
+  const sig=document.getElementById('sigCanvas').toDataURL();
+  const p=parcels.find(x=>x.id===selectedParcelId);
+  p.status='collected';
+  p.collectDate=today();
+  p.collectTime=now();
+  p.collector=name;
+  p.relation=document.getElementById('collector-relation').value;
+  p.deliverStaff=staff2;
+  p.signature=sig;
+  save();
+  document.getElementById('collect-form-card').style.display='none';
+  document.getElementById('collect-search').value='';
+  document.getElementById('collect-results').innerHTML='';
+  selectedParcelId=null;
+  renderAll();
+  updateBadges();
+  alert('✅ บันทึกจ่ายพัสดุสำเร็จ!');
+}
+
+// ===== HISTORY =====
+function renderHistory(){
+  const q=document.getElementById('search-history')?.value.toLowerCase()||'';
+  const fs=document.getElementById('filter-status-h')?.value||'';
+  const fd=document.getElementById('filter-date-h')?.value||'';
+  let data=[...parcels].filter(p=>{
+    const match=!q||p.room.toLowerCase().includes(q)||p.owner.toLowerCase().includes(q)||p.tracking.toLowerCase().includes(q);
+    return match&&(!fs||p.status===fs)&&(!fd||p.receiveDate===fd);
+  });
+  const tb=document.getElementById('history-table');
+  if(!tb)return;
+  if(!data.length){tb.innerHTML='<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--muted)">ไม่พบรายการ</td></tr>';return;}
+  tb.innerHTML=data.map((p,i)=>{
+    const photos=p.photos||[];
+    const photoCell=photos.length
+      ? `<td>
+          <div style="display:flex;align-items:center;gap:5px">
+            <img src="${photos[0]}" onclick="openLightbox(${JSON.stringify(photos).replace(/"/g,'&quot;')},0)"
+              style="width:38px;height:38px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:pointer;flex-shrink:0"
+              title="คลิกดูรูป">
+            ${photos.length>1?`<span style="font-size:11px;color:var(--muted)">+${photos.length-1}</span>`:''}
+          </div>
+        </td>`
+      : `<td><span style="font-size:12px;color:var(--muted)">–</span></td>`;
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${fmtDate(p.receiveDate)}</td>
+      <td><strong>${p.room}</strong></td>
+      <td>${p.owner}</td>
+      <td>${carrierBadge(p.carrier)}</td>
+      <td style="font-family:monospace;font-size:12px">${p.tracking}</td>
+      <td>${typeBadge(p.type)}</td>
+      ${photoCell}
+      <td>${statusBadge(p.status)}</td>
+      <td>${fmtDate(p.collectDate)}</td>
+      <td>${p.collector||'-'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="showDetail('${p.id}')"><i class="ti ti-eye"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== REPORTS =====
+let dailyC=null,typeC=null,roomC=null;
+function populateMonthSelector(){
+  const sel=document.getElementById('report-month');
+  if(!sel)return;
+  const months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const now2=new Date();
+  for(let i=0;i<6;i++){
+    const d=new Date(now2.getFullYear(),now2.getMonth()-i,1);
+    const opt=document.createElement('option');
+    opt.value=`${d.getFullYear()}-${d.getMonth()}`;
+    opt.textContent=months[d.getMonth()]+' '+d.getFullYear();
+    if(i===0)opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
+function renderReports(){
+  const val=(document.getElementById('report-month')?.value||`${new Date().getFullYear()}-${new Date().getMonth()}`).split('-');
+  const yr=parseInt(val[0]),mo=parseInt(val[1]);
+  const mp=parcels.filter(p=>{const d=new Date(p.receiveDate);return d.getFullYear()===yr&&d.getMonth()===mo});
+  const total=mp.length,coll=mp.filter(p=>p.status==='collected').length,pend=mp.filter(p=>p.status==='pending').length;
+  document.getElementById('r-total').textContent=total;
+  document.getElementById('r-collected').textContent=coll;
+  document.getElementById('r-pending').textContent=pend;
+  document.getElementById('r-rate').textContent=total?Math.round(coll/total*100)+'%':'0%';
+
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  const days=Array.from({length:daysInMonth},(_,i)=>i+1);
+  const dailyCounts=days.map(d=>mp.filter(p=>new Date(p.receiveDate).getDate()===d).length);
+  if(dailyC)dailyC.destroy();
+  dailyC=new Chart(document.getElementById('dailyChart'),{
+    type:'bar',data:{labels:days,datasets:[{label:'พัสดุ',data:dailyCounts,backgroundColor:'rgba(26,39,68,.7)',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{ticks:{autoSkip:false,maxRotation:0,font:{size:10}}}}}
+  });
+
+  const types=['เอกสาร','กล่อง','อาหาร','พัสดุขนาดใหญ่'];
+  const tc=types.map(t=>mp.filter(p=>p.type===t).length);
+  if(typeC)typeC.destroy();
+  typeC=new Chart(document.getElementById('typeChart'),{
+    type:'doughnut',data:{labels:types,datasets:[{data:tc,backgroundColor:['#1565c0','#6a1b9a','#f57f17','#880e4f'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},cutout:'50%'}
+  });
+
+  const roomCount={};
+  mp.forEach(p=>{roomCount[p.room]=(roomCount[p.room]||0)+1});
+  const sorted=Object.entries(roomCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(roomC)roomC.destroy();
+  const wrapH=Math.max(200,(sorted.length*40)+80);
+  document.getElementById('roomChart').parentElement.style.height=wrapH+'px';
+  roomC=new Chart(document.getElementById('roomChart'),{
+    type:'bar',
+    data:{labels:sorted.map(r=>'ห้อง '+r[0]),datasets:[{label:'พัสดุ',data:sorted.map(r=>r[1]),backgroundColor:'rgba(184,150,62,.8)',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+}
+
+// ===== DETAIL =====
+function showDetail(id){
+  const p=parcels.find(x=>x.id===id);
+  const days=daysDiff(p.receiveDate);
+  const photos=p.photos||[];
+
+  const photoSection=photos.length?`
+    <div class="mt-12">
+      <div class="text-muted text-sm" style="margin-bottom:6px">
+        <i class="ti ti-camera" style="font-size:13px;margin-right:4px"></i>รูปถ่ายพัสดุ (${photos.length} รูป)
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${photos.map((src,i)=>`
+          <div style="position:relative;cursor:pointer" onclick="openLightbox(parcelPhotosCache,${i})">
+            <img src="${src}"
+              style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:block;transition:opacity .15s"
+              onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:.15s;background:rgba(0,0,0,.3);border-radius:8px"
+              onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+              <i class="ti ti-zoom-in" style="color:#fff;font-size:20px"></i>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`:
+    `<div class="mt-12" style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px">
+      <i class="ti ti-camera-off"></i> ไม่มีรูปถ่ายพัสดุ
+    </div>`;
+
+  document.getElementById('detail-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+      <div><div class="text-muted text-sm">เลขห้อง</div><div class="fw-600" style="font-size:16px">${p.room}</div></div>
+      <div><div class="text-muted text-sm">เจ้าของห้อง</div><div class="fw-600">${p.owner}</div></div>
+      <div><div class="text-muted text-sm">บริษัทขนส่ง</div>${carrierBadge(p.carrier)}</div>
+      <div><div class="text-muted text-sm">เลขพัสดุ</div><div style="font-family:monospace">${p.tracking}</div></div>
+      <div><div class="text-muted text-sm">ประเภท</div>${typeBadge(p.type)}</div>
+      <div><div class="text-muted text-sm">สถานะ</div>${statusBadge(p.status)}</div>
+      <div><div class="text-muted text-sm">วันที่รับเข้า</div>${fmtDateTime(p.receiveDate,p.receiveTime)}</div>
+      <div><div class="text-muted text-sm">พนักงานผู้รับ</div>${p.staff}</div>
+      <div><div class="text-muted text-sm">ที่จัดเก็บ</div>${p.location||'-'}</div>
+      <div><div class="text-muted text-sm">ค้างมาแล้ว</div><span style="color:${days>=15?'var(--red)':days>=7?'var(--amber)':'inherit'};font-weight:600">${p.status==='pending'?days+' วัน':'จ่ายออกแล้ว'}</span></div>
+      ${p.status==='collected'?`
+      <div><div class="text-muted text-sm">วันที่จ่ายออก</div>${fmtDateTime(p.collectDate,p.collectTime)}</div>
+      <div><div class="text-muted text-sm">ผู้รับพัสดุ</div>${p.collector} (${p.relation})</div>
+      <div><div class="text-muted text-sm">พนักงานส่งมอบ</div>${p.deliverStaff||'-'}</div>
+      `:''}
+    </div>
+    ${p.note?`<div class="mt-12"><div class="text-muted text-sm">หมายเหตุ</div><div style="font-size:13px;margin-top:3px">${p.note}</div></div>`:''}
+    ${photoSection}
+    ${p.signature&&p.status==='collected'?`
+      <div class="mt-12">
+        <div class="text-muted text-sm" style="margin-bottom:4px"><i class="ti ti-pencil" style="font-size:13px;margin-right:4px"></i>ลายเซ็นผู้รับ</div>
+        <img src="${p.signature}" style="max-width:100%;border:1px solid var(--border);border-radius:8px;height:80px;background:#fafaf8;display:block">
+      </div>`:''}
+  `;
+
+  // Cache photos array for lightbox access
+  window.parcelPhotosCache=photos;
+  document.getElementById('detail-modal').classList.add('show');
+}
+
+// ===== LIGHTBOX =====
+let lbPhotos=[];let lbIdx=0;
+function openLightbox(photos,idx){
+  if(!photos||!photos.length)return;
+  lbPhotos=photos;lbIdx=idx;
+  document.getElementById('lightbox').style.display='flex';
+  lbRender();
+  document.addEventListener('keydown',lbKeyHandler);
+}
+function lbRender(){
+  const img=document.getElementById('lb-img');
+  const counter=document.getElementById('lb-counter');
+  const strip=document.getElementById('lb-strip');
+  img.src=lbPhotos[lbIdx];
+  counter.textContent=(lbIdx+1)+' / '+lbPhotos.length;
+  document.getElementById('lb-prev').style.display=lbPhotos.length>1?'flex':'none';
+  document.getElementById('lb-next').style.display=lbPhotos.length>1?'flex':'none';
+  strip.innerHTML=lbPhotos.length>1?lbPhotos.map((s,i)=>`
+    <img src="${s}" onclick="event.stopPropagation();lbIdx=${i};lbRender()"
+      style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid ${i===lbIdx?'var(--gold)':'rgba(255,255,255,.25)'};opacity:${i===lbIdx?'1':'.6'};flex-shrink:0">`).join(''):'';
+}
+function lbNav(dir){
+  lbIdx=(lbIdx+dir+lbPhotos.length)%lbPhotos.length;
+  lbRender();
+}
+function lbKeyHandler(e){
+  if(e.key==='ArrowLeft')lbNav(-1);
+  else if(e.key==='ArrowRight')lbNav(1);
+  else if(e.key==='Escape')closeLightbox();
+}
+function lbDownload(){
+  const a=document.createElement('a');
+  a.href=lbPhotos[lbIdx];
+  a.download='parcel-photo-'+(lbIdx+1)+'.jpg';
+  a.click();
+}
+function closeLightbox(e){
+  if(e&&e.target!==document.getElementById('lightbox')&&!e.target.id.startsWith('lb-')&&e.target.tagName!=='BUTTON'&&!e.target.closest('button'))return;
+  if(e&&e.currentTarget===document.getElementById('lightbox')&&e.target!==document.getElementById('lightbox'))return;
+  document.getElementById('lightbox').style.display='none';
+  document.removeEventListener('keydown',lbKeyHandler);
+  lbPhotos=[];
+}
+// close on overlay bg click
+document.getElementById('lightbox').addEventListener('click',function(e){
+  if(e.target===this)closeLightbox();
+});
+
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+
+// ===== NOTIFICATION =====
+function showNotif(id){
+  const p=parcels.find(x=>x.id===id);
+  const msg=`📦 แจ้งพัสดุเข้า – เลอ รัฟฟิเน่ สุขุมวิท 24
+
+เรียน เจ้าของห้อง ${p.room}
+
+มีพัสดุ (${p.type}) จาก ${p.carrier}
+รับเข้าวันที่ ${fmtDate(p.receiveDate)} เวลา ${p.receiveTime} น.
+เลขพัสดุ: ${p.tracking}
+
+กรุณารับพัสดุได้ที่เคาน์เตอร์นิติบุคคล
+เวลาทำการ 08:00–20:00 น.
+หากพ้น 15 วัน พัสดุจะถูกส่งคืน
+
+📞 02-xxx-xxxx | นิติบุคคลเลอ รัฟฟิเน่`;
+  document.getElementById('notif-modal-body').textContent=msg;
+  document.getElementById('notif-modal').classList.add('show');
+  p.notified=true;
+  save();
+}
+function showNotifTemplate(){
+  document.getElementById('notif-modal-body').textContent=`📦 แจ้งพัสดุเข้า – เลอ รัฟฟิเน่ สุขุมวิท 24
+
+เรียน เจ้าของห้อง [เลขห้อง]
+
+มีพัสดุ ([ประเภท]) จาก [บริษัทขนส่ง]
+รับเข้าวันที่ [วันที่] เวลา [เวลา] น.
+
+กรุณารับพัสดุได้ที่เคาน์เตอร์นิติบุคคล
+เวลาทำการ 08:00–20:00 น.
+หากพ้น 15 วัน พัสดุจะถูกส่งคืนบริษัทขนส่ง
+
+📞 02-xxx-xxxx | เลอ รัฟฟิเน่ สุขุมวิท 24`;
+  document.getElementById('notif-modal').classList.add('show');
+}
+function copyNotif(){
+  const text=document.getElementById('notif-modal-body').textContent;
+  navigator.clipboard.writeText(text).then(()=>alert('คัดลอกแล้ว!'));
+}
+
+// ===== SOP =====
+function showSOP(){document.getElementById('sop-modal').classList.add('show')}
+
+// ===== STAFF =====
+function populateStaffDropdowns(){
+  ['r-staff','staff-deliver'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option>เลือกพนักงาน...</option>'+staff.map(s=>`<option ${s===cur?'selected':''}>${s}</option>`).join('');
+  });
+}
+function renderStaffSettings(){
+  const list=document.getElementById('staff-list');
+  if(!list)return;
+  list.innerHTML=staff.map((s,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${s}</span><button class="btn btn-danger btn-sm" onclick="removeStaff(${i})"><i class="ti ti-trash"></i></button></div>`).join('');
+}
+function addStaff(){
+  const v=document.getElementById('new-staff').value.trim();
+  if(!v)return;
+  staff.push(v);
+  document.getElementById('new-staff').value='';
+  save();renderStaffSettings();populateStaffDropdowns();
+}
+function removeStaff(i){
+  staff.splice(i,1);save();renderStaffSettings();populateStaffDropdowns();
+}
+function saveSettings(){
+  save();alert('บันทึกการตั้งค่าแล้ว');
+}
+
+// ===== BADGE =====
+function updateBadges(){
+  const pending=parcels.filter(p=>p.status==='pending').length;
+  document.getElementById('badge-pending').textContent=pending||'';
+  document.getElementById('badge-pending').style.display=pending?'':'none';
+}
+
+// ===== SIGNATURE =====
+function initSigPad(){
+  const canvas=document.getElementById('sigCanvas');
+  if(!canvas)return;
+  sigPad.ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth||400;
+  canvas.height=120;
+  sigPad.ctx.strokeStyle='#1a2744';
+  sigPad.ctx.lineWidth=2;
+  sigPad.ctx.lineCap='round';
+
+  const getPos=(e)=>{
+    const r=canvas.getBoundingClientRect();
+    const src=e.touches?e.touches[0]:e;
+    return{x:(src.clientX-r.left)*(canvas.width/r.width),y:(src.clientY-r.top)*(canvas.height/r.height)};
+  };
+  canvas.addEventListener('mousedown',e=>{sigPad.drawing=true;const p=getPos(e);sigPad.ctx.beginPath();sigPad.ctx.moveTo(p.x,p.y)});
+  canvas.addEventListener('mousemove',e=>{if(!sigPad.drawing)return;const p=getPos(e);sigPad.ctx.lineTo(p.x,p.y);sigPad.ctx.stroke()});
+  canvas.addEventListener('mouseup',()=>sigPad.drawing=false);
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();sigPad.drawing=true;const p=getPos(e);sigPad.ctx.beginPath();sigPad.ctx.moveTo(p.x,p.y)},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!sigPad.drawing)return;const p=getPos(e);sigPad.ctx.lineTo(p.x,p.y);sigPad.ctx.stroke()},{passive:false});
+  canvas.addEventListener('touchend',()=>sigPad.drawing=false);
+}
+function clearSig(){
+  const c=document.getElementById('sigCanvas');
+  if(!c||!sigPad.ctx)return;
+  sigPad.ctx.clearRect(0,0,c.width,c.height);
+}
+
+// ===== SAVE =====
+function save(){
+  localStorage.setItem('lr-parcels',JSON.stringify(parcels));
+  localStorage.setItem('lr-staff',JSON.stringify(staff));
+  localStorage.setItem('lr-settings',JSON.stringify(settings));
+}
+
+// ===== EXPORT =====
+function exportExcel(){
+  if(!parcels.length){alert('ไม่มีข้อมูล');return;}
+  const ws=XLSX.utils.json_to_sheet(parcels.map(p=>({
+    'ลำดับ':parcels.indexOf(p)+1,
+    'วันที่รับ':p.receiveDate,'เวลา':p.receiveTime,
+    'เลขห้อง':p.room,'ชื่อเจ้าของ':p.owner,
+    'บริษัทขนส่ง':p.carrier,'เลขพัสดุ':p.tracking,
+    'ประเภท':p.type,'พนักงานรับ':p.staff,'ที่จัดเก็บ':p.location,
+    'สถานะ':p.status==='collected'?'รับแล้ว':'รอรับ',
+    'วันที่รับออก':p.collectDate||'','ผู้รับ':p.collector||'',
+    'ความสัมพันธ์':p.relation||'','หมายเหตุ':p.note
+  })));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'พัสดุ');
+  XLSX.writeFile(wb,'parcel-report-'+today()+'.xlsx');
+}
+
+// ===== PRINT =====
+function printPendingReport(){
+  const pending=parcels.filter(p=>p.status==='pending').sort((a,b)=>new Date(a.receiveDate)-new Date(b.receiveDate));
+  const rows=pending.map((p,i)=>`<tr><td>${i+1}</td><td>${p.room}</td><td>${p.owner}</td><td>${p.carrier}</td><td>${p.type}</td><td>${fmtDate(p.receiveDate)}</td><td>${daysDiff(p.receiveDate)} วัน</td><td>${p.location||'-'}</td></tr>`).join('');
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>รายงานพัสดุค้างรับ</title><style>body{font-family:Sarabun,sans-serif;font-size:13px;padding:24px}h2{font-size:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 10px}th{background:#f0f0f0;font-weight:600}</style></head><body><h2>รายงานพัสดุค้างรับ – เลอ รัฟฟิเน่ สุขุมวิท 24</h2><p>วันที่พิมพ์: ${fmtDate(today())} | รายการค้างรับ: ${pending.length} รายการ</p><table><thead><tr><th>#</th><th>ห้อง</th><th>ชื่อ</th><th>บริษัท</th><th>ประเภท</th><th>วันที่รับ</th><th>ค้าง</th><th>ที่จัดเก็บ</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+  win.print();
+}
+function printForm(type){
+  const templates={
+    'receive-form':`<h2>แบบฟอร์มรับพัสดุ</h2><p>เลอ รัฟฟิเน่ สุขุมวิท 24</p><table style="width:100%;border-collapse:collapse"><tr><td style="border:1px solid #ccc;padding:8px;width:50%">วันที่/เวลารับ: _______________</td><td style="border:1px solid #ccc;padding:8px">บริษัทขนส่ง: _______________</td></tr><tr><td style="border:1px solid #ccc;padding:8px">เลขห้อง: _______________</td><td style="border:1px solid #ccc;padding:8px">เลขพัสดุ: _______________</td></tr><tr><td style="border:1px solid #ccc;padding:8px">ชื่อเจ้าของห้อง: _______________</td><td style="border:1px solid #ccc;padding:8px">ประเภทพัสดุ: □เอกสาร □กล่อง □อาหาร □ขนาดใหญ่</td></tr><tr><td style="border:1px solid #ccc;padding:8px">ที่จัดเก็บ: _______________</td><td style="border:1px solid #ccc;padding:8px">พนักงานผู้รับ: _______________</td></tr><tr><td colspan="2" style="border:1px solid #ccc;padding:8px">หมายเหตุ: _______________</td></tr></table>`,
+    'collect-form':`<h2>แบบฟอร์มจ่ายพัสดุ</h2><p>เลอ รัฟฟิเน่ สุขุมวิท 24</p><table style="width:100%;border-collapse:collapse"><tr><td style="border:1px solid #ccc;padding:8px;width:50%">วันที่/เวลาจ่าย: _______________</td><td style="border:1px solid #ccc;padding:8px">เลขห้อง: _______________</td></tr><tr><td style="border:1px solid #ccc;padding:8px">ชื่อผู้รับ: _______________</td><td style="border:1px solid #ccc;padding:8px">ความสัมพันธ์: _______________</td></tr><tr><td style="border:1px solid #ccc;padding:8px">เลขบัตรประชาชน: _______________</td><td style="border:1px solid #ccc;padding:8px">พนักงานผู้ส่งมอบ: _______________</td></tr><tr><td colspan="2" style="border:1px solid #ccc;padding:80px 8px 8px">ลายเซ็นผู้รับ: _______________</td></tr></table>`,
+    'poa-form':`<h2>หนังสือมอบอำนาจรับพัสดุ</h2><p>เลอ รัฟฟิเน่ สุขุมวิท 24</p><p>ข้าพเจ้า ________________ เจ้าของห้องเลขที่ ______ ขอมอบอำนาจให้<br><br>ชื่อผู้รับมอบ: ________________ เลขบัตรประชาชน: ________________<br><br>มารับพัสดุแทนข้าพเจ้า บริษัทขนส่ง ________________ เลขพัสดุ ________________<br><br>วันที่มอบอำนาจ: ________________<br><br><div style="display:flex;gap:60px;margin-top:40px"><div>ลายเซ็นผู้มอบ<br><br>_____________<br>(${' '}ผู้มอบอำนาจ)</div><div>ลายเซ็นผู้รับมอบ<br><br>_____________<br>(ผู้รับมอบอำนาจ)</div></div></p>`
+  };
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>แบบฟอร์ม</title><style>body{font-family:Sarabun,sans-serif;font-size:14px;padding:32px;max-width:700px;margin:0 auto}h2{border-bottom:2px solid #1a2744;padding-bottom:8px;color:#1a2744}</style></head><body>${templates[type]}</body></html>`);
+  setTimeout(()=>win.print(),400);
+}
+
+// ===== DEMO DATA =====
+function loadDemoData(){
+  if(!confirm('โหลดข้อมูลตัวอย่าง? (ข้อมูลเดิมจะยังคงอยู่)'))return;
+  const carriers=['Kerry','Flash','DHL','ไปรษณีย์ไทย','J&T','Lazada','Shopee'];
+  const types=['กล่อง','เอกสาร','อาหาร','พัสดุขนาดใหญ่'];
+  const rooms=['101','102','203','304','405','506','201','302','403','504'];
+  const owners=['คุณสมชาย ใจดี','คุณมณีรัตน์ สุขสันต์','Mr. James Wilson','คุณพิมพ์ชนก วีระ','คุณอนุชา พงษ์ไทย','Ms. Sarah Kim','คุณวิไล เดชา','คุณนภัส ชัยวัฒน์','คุณธนา รุ่งเรือง','คุณสุภา มีสุข'];
+  const locations=['ชั้น A – ตู้ 1','ชั้น B – ตู้ 2','ชั้น B – ตู้ 3','ตู้เย็น','ลาน C'];
+  const now2=new Date();
+  for(let i=0;i<25;i++){
+    const daysAgo=Math.floor(Math.random()*35);
+    const d=new Date(now2-daysAgo*86400000);
+    const ri=Math.floor(Math.random()*rooms.length);
+    const collected=Math.random()>0.4;
+    const p={
+      id:uid(),
+      receiveDate:d.toISOString().split('T')[0],
+      receiveTime:`${8+Math.floor(Math.random()*12)}:${Math.random()>0.5?'30':'00'}`,
+      carrier:carriers[Math.floor(Math.random()*carriers.length)],
+      tracking:'TH'+Math.random().toString().slice(2,12),
+      room:rooms[ri],owner:owners[ri],
+      type:types[Math.floor(Math.random()*types.length)],
+      staff:staff[Math.floor(Math.random()*staff.length)],
+      location:locations[Math.floor(Math.random()*locations.length)],
+      note:'',status:collected?'collected':'pending',notified:true,
+      collectDate:collected?new Date(d.getTime()+(1+Math.floor(Math.random()*3))*86400000).toISOString().split('T')[0]:null,
+      collectTime:collected?'14:30':null,
+      collector:collected?owners[Math.floor(Math.random()*owners.length)]:null,
+      relation:collected?'เจ้าของห้อง':null,
+      deliverStaff:collected?staff[Math.floor(Math.random()*staff.length)]:null,
+      signature:null
+    };
+    parcels.push(p);
+  }
+  save();renderAll();updateBadges();
+  alert('โหลดข้อมูลตัวอย่าง 25 รายการแล้ว');
+}
+function clearAllData(){parcels=[];save();renderAll();updateBadges()}
+
+// ===== MOBILE FUNCTIONS =====
+const isMobile=()=>window.innerWidth<=768;
+
+function showSectionMobile(name){
+  // Works for both desktop (sidebar) and mobile (bottom nav + drawer)
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  // Desktop sidebar
+  document.querySelectorAll('.sidebar .nav-item').forEach(n=>n.classList.remove('active'));
+  const desktopNav=document.querySelector(`.sidebar .nav-item[onclick*="'${name}'"]`);
+  if(desktopNav)desktopNav.classList.add('active');
+  // Bottom nav
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  const bnMap={dashboard:'bn-dashboard',pending:'bn-pending',scan:'bn-scan',history:'bn-history'};
+  const bnEl=document.getElementById(bnMap[name]);
+  if(bnEl)bnEl.classList.add('active');
+  // Drawer nav
+  document.querySelectorAll('.drawer-panel .nav-item').forEach(n=>n.classList.remove('active'));
+  const drawerNav=document.querySelector(`.drawer-panel .nav-item[onclick*="'${name}'"]`);
+  if(drawerNav)drawerNav.classList.add('active');
+  closeDrawer();
+  renderAll();
+  updateBadges();
+  // Scroll to top on section change
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Override showSection to also update bottom nav
+const _origShowSection=window.showSection;
+window.showSection=function(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  document.querySelectorAll('.sidebar .nav-item').forEach(n=>n.classList.remove('active'));
+  if(event&&event.currentTarget)event.currentTarget.classList.add('active');
+  // Sync bottom nav
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  const bnMap={dashboard:'bn-dashboard',pending:'bn-pending',scan:'bn-scan',history:'bn-history'};
+  if(bnMap[name])document.getElementById(bnMap[name])?.classList.add('active');
+  renderAll();updateBadges();
+};
+
+// Drawer
+function openDrawer(){
+  document.getElementById('sidebar-drawer').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('sidebar-drawer').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// FAB actions
+function onFabAdd(){
+  if(isMobile()){
+    openReceiveSheet();
+  } else {
+    showSectionMobile('receive');
+    openReceiveModal();
+  }
+}
+function onFabScan(){
+  showSectionMobile('scan');
+  setTimeout(()=>openScanner('receive'),200);
+}
+
+// ===== MOBILE RECEIVE SHEET =====
+let sheetPhotos=[];
+
+function openReceiveSheet(){
+  const staffOpts=staff.map(s=>`<option>${s}</option>`).join('');
+  document.getElementById('sheet-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group">
+        <label>วันที่รับ <span class="required">*</span></label>
+        <input type="date" id="sr-date" value="${today()}">
+      </div>
+      <div class="form-group">
+        <label>เวลา <span class="required">*</span></label>
+        <input type="time" id="sr-time" value="${now()}">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>เลขพัสดุ <span class="required">*</span></label>
+      <div class="scan-input-wrap">
+        <input type="text" id="sr-tracking" placeholder="TH12345678..." style="flex:1">
+        <button type="button" class="scan-btn" onclick="openScanner('sheet-tracking')" title="สแกน"><i class="ti ti-scan"></i></button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group">
+        <label>เลขห้อง <span class="required">*</span></label>
+        <input type="text" id="sr-room" placeholder="เช่น 101">
+      </div>
+      <div class="form-group">
+        <label>บริษัทขนส่ง <span class="required">*</span></label>
+        <select id="sr-carrier">
+          <option>Kerry</option><option>Flash</option><option>DHL</option>
+          <option>ไปรษณีย์ไทย</option><option>J&T</option><option>Lazada</option><option>Shopee</option><option>อื่นๆ</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>ชื่อเจ้าของห้อง <span class="required">*</span></label>
+      <input type="text" id="sr-owner" placeholder="ชื่อ-นามสกุล">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group">
+        <label>ประเภทพัสดุ</label>
+        <select id="sr-type">
+          <option>กล่อง</option><option>เอกสาร</option><option>อาหาร</option><option>พัสดุขนาดใหญ่</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>พนักงานผู้รับ <span class="required">*</span></label>
+        <select id="sr-staff"><option>เลือก...</option>${staffOpts}</select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>ถ่ายรูปพัสดุ</label>
+      <div class="upload-zone" onclick="document.getElementById('sr-photo-input').click()">
+        <i class="ti ti-camera"></i> แตะเพื่อถ่าย / เลือกรูป
+        <input type="file" id="sr-photo-input" accept="image/*" capture="environment" multiple style="display:none" onchange="previewSheetPhotos(this)">
+      </div>
+      <div class="thumb-grid" id="sr-photo-preview"></div>
+    </div>
+    <div class="form-group">
+      <label>หมายเหตุ</label>
+      <textarea id="sr-note" placeholder="สภาพพัสดุ หรือข้อมูลเพิ่มเติม..." style="min-height:56px"></textarea>
+    </div>
+  `;
+  sheetPhotos=[];
+  document.getElementById('receive-sheet').classList.add('open');
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  // Focus first relevant input after open
+  setTimeout(()=>document.getElementById('sr-tracking')?.focus(),350);
+}
+
+function closeReceiveSheet(){
+  document.getElementById('receive-sheet').classList.remove('open');
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.body.style.overflow='';
+  sheetPhotos=[];
+}
+
+function previewSheetPhotos(input){
+  const preview=document.getElementById('sr-photo-preview');
+  preview.innerHTML='';
+  sheetPhotos=[];
+  const files=Array.from(input.files);
+  if(!files.length)return;
+  let done=0;
+  files.forEach((f,idx)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const imgEl=new Image();
+      imgEl.onload=()=>{
+        const MAX=900;
+        let w=imgEl.width,h=imgEl.height;
+        if(w>MAX||h>MAX){const r=MAX/Math.max(w,h);w=Math.round(w*r);h=Math.round(h*r);}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(imgEl,0,0,w,h);
+        const b64=cv.toDataURL('image/jpeg',0.75);
+        sheetPhotos[idx]=b64;done++;
+        const thumb=document.createElement('img');
+        thumb.src=b64;thumb.className='thumb';thumb.style.cursor='pointer';
+        thumb.onclick=()=>openLightbox([b64],0);
+        preview.appendChild(thumb);
+      };
+      imgEl.src=e.target.result;
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function saveParcelSheet(){
+  const room=(document.getElementById('sr-room')?.value||'').trim();
+  const owner=(document.getElementById('sr-owner')?.value||'').trim();
+  const carrier=document.getElementById('sr-carrier')?.value||'Kerry';
+  const tracking=(document.getElementById('sr-tracking')?.value||'').trim();
+  const staff2=document.getElementById('sr-staff')?.value||'';
+  if(!room||!owner||!tracking||staff2==='เลือก...'){
+    alert('กรุณากรอกข้อมูลสำคัญให้ครบ:\nเลขพัสดุ, ห้อง, ชื่อ, พนักงาน');return;
+  }
+  const p={
+    id:uid(),
+    receiveDate:document.getElementById('sr-date')?.value||today(),
+    receiveTime:document.getElementById('sr-time')?.value||now(),
+    carrier,tracking,room,owner,
+    type:document.getElementById('sr-type')?.value||'กล่อง',
+    staff:staff2,
+    location:'',
+    note:document.getElementById('sr-note')?.value||'',
+    photos:sheetPhotos.filter(Boolean),
+    status:'pending',notified:true,
+    collectDate:null,collectTime:null,collector:null,relation:null,signature:null
+  };
+  pendingPhotos=[];sheetPhotos=[];
+  parcels.unshift(p);
+  save();closeReceiveSheet();renderAll();updateBadges();
+  // Toast notification
+  showToast('✅ รับพัสดุห้อง '+room+' สำเร็จ'+(p.photos.length?' ('+p.photos.length+' รูป)':''));
+}
+
+// ===== TOAST =====
+function showToast(msg,duration=3000){
+  let toast=document.getElementById('mobile-toast');
+  if(!toast){
+    toast=document.createElement('div');
+    toast.id='mobile-toast';
+    toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(26,39,68,.95);color:#fff;padding:10px 18px;border-radius:24px;font-size:13px;z-index:9999;white-space:nowrap;font-family:Sarabun,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;pointer-events:none';
+    document.body.appendChild(toast);
+  }
+  toast.textContent=msg;toast.style.opacity='1';
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>{toast.style.opacity='0';},duration);
+}
+
+// Handle scan result for sheet-tracking mode
+const _origProcessScan=processScanResult;
+window.processScanResult=function(tracking){
+  if(scanMode==='sheet-tracking'){
+    const inp=document.getElementById('sr-tracking');
+    if(inp)inp.value=tracking;
+    closeScanner();
+    const existing=parcels.find(p=>p.tracking.toLowerCase()===tracking.toLowerCase());
+    if(existing) setTimeout(()=>showToast('⚠ เลขพัสดุนี้มีในระบบแล้ว'),200);
+    else showToast('📦 สแกนได้: '+tracking);
+    return;
+  }
+  _origProcessScan(tracking);
+};
+
+// Update badges: also update drawer + bottom nav
+const _origUpdateBadges=updateBadges;
+window.updateBadges=function(){
+  _origUpdateBadges();
+  const pending=parcels.filter(p=>p.status==='pending').length;
+  const bnBadge=document.getElementById('bn-badge');
+  const drawerBadge=document.getElementById('drawer-badge-pending');
+  if(bnBadge){bnBadge.textContent=pending||'';bnBadge.style.display=pending?'block':'none';}
+  if(drawerBadge){drawerBadge.textContent=pending||'';drawerBadge.style.display=pending?'inline':'none';}
+};
+
+// Pull-to-refresh hint (visual only)
+let touchStartY=0;
+document.addEventListener('touchstart',e=>touchStartY=e.touches[0].clientY,{passive:true});
+
+// Swipe-to-close drawer
+document.querySelector('.drawer-panel')?.addEventListener('touchstart',e=>touchStartY=e.touches[0].clientY,{passive:true});
+document.querySelector('.drawer-panel')?.addEventListener('touchend',e=>{
+  const dy=e.changedTouches[0].clientY-touchStartY;
+  // Swipe left to close (dx-based — handled by overlay click)
+},{passive:true});
+
+// Swipe bottom sheet down to close
+document.getElementById('receive-sheet')?.addEventListener('touchstart',e=>{
+  if(e.touches[0].clientY<80)touchStartY=e.touches[0].clientY;
+},{passive:true});
+document.getElementById('receive-sheet')?.addEventListener('touchend',e=>{
+  const dy=e.changedTouches[0].clientY-touchStartY;
+  if(dy>80)closeReceiveSheet();
+},{passive:true});
+
+
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show')});
+});
+let scanMode='receive'; // 'receive' | 'receive-modal' | 'collect'
+let codeReader=null;
+let scanStream=null;
+let scanDevices=[];
+let scanDeviceIndex=0;
+let scanHistory=[];
+
+function openScanner(mode){
+  scanMode=mode;
+  const overlay=document.getElementById('scan-overlay');
+  const label=document.getElementById('scan-overlay-label');
+  label.textContent = mode==='collect'
+    ? '🔍 สแกนเพื่อจ่ายพัสดุ'
+    : '📦 สแกนเพื่อรับพัสดุ';
+  document.getElementById('scan-manual-input').value='';
+  document.getElementById('scan-status').textContent='กำลังเริ่มกล้อง...';
+  overlay.classList.add('show');
+  startScanner();
+}
+
+let torchOn=false;
+let lastScanText='';
+let scanCooldown=false;
+let beepCtx=null;
+
+function beep(){
+  try{
+    if(!beepCtx)beepCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=beepCtx.createOscillator();
+    const g=beepCtx.createGain();
+    o.connect(g);g.connect(beepCtx.destination);
+    o.type='sine';o.frequency.value=1200;
+    g.gain.setValueAtTime(0.3,beepCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,beepCtx.currentTime+0.18);
+    o.start(beepCtx.currentTime);o.stop(beepCtx.currentTime+0.18);
+  }catch(e){}
+}
+
+async function startScanner(){
+  stopScanner();
+  torchOn=false;
+  lastScanText='';
+  scanCooldown=false;
+  const status=document.getElementById('scan-status');
+  const torchBtn=document.getElementById('torch-btn');
+
+  // Wait for ZXing to load (retry up to 5s)
+  let waited=0;
+  while(typeof ZXing==='undefined'&&waited<5000){
+    status.textContent='⏳ กำลังโหลดระบบสแกน...';
+    await new Promise(r=>setTimeout(r,300));
+    waited+=300;
+  }
+  if(typeof ZXing==='undefined'){
+    status.textContent='❌ โหลดระบบสแกนไม่สำเร็จ – กรุณาพิมพ์เลขพัสดุด้านล่างแทน';
+    return;
+  }
+
+  try{
+    const hints=new Map();
+    hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.CODE_39,
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.QR_CODE,
+      ZXing.BarcodeFormat.DATA_MATRIX,
+      ZXing.BarcodeFormat.ITF,
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.UPC_E,
+    ]);
+    codeReader=new ZXing.BrowserMultiFormatReader(hints);
+
+    // Enumerate cameras
+    let devices=[];
+    try{devices=await ZXing.BrowserCodeReader.listVideoInputDevices();}catch(e){}
+    scanDevices=devices;
+
+    // Pick best camera: prefer labelled back camera, then environment facingMode
+    let devId=undefined;
+    if(devices.length){
+      const back=devices.find(d=>/back|rear|environment|หลัง/i.test(d.label));
+      devId=(back||devices[scanDeviceIndex%devices.length]).deviceId;
+    }
+    const switchBtn=document.getElementById('switch-cam-btn');
+    if(switchBtn)switchBtn.style.display=devices.length>1?'inline-flex':'none';
+
+    status.textContent='กำลังเปิดกล้อง...';
+
+    const constraints={
+      video:{
+        ...(devId?{deviceId:{exact:devId}}:{facingMode:'environment'}),
+        width:{ideal:1920},height:{ideal:1080},
+        focusMode:'continuous',
+        zoom:1
+      }
+    };
+
+    scanStream=await navigator.mediaDevices.getUserMedia(constraints);
+    const vid=document.getElementById('scan-video');
+    vid.srcObject=scanStream;
+    await vid.play();
+
+    // Torch support check
+    const track=scanStream.getVideoTracks()[0];
+    const caps=track.getCapabilities?track.getCapabilities():{};
+    if(torchBtn)torchBtn.style.display=caps.torch?'inline-flex':'none';
+
+    status.textContent='✅ พร้อมสแกน – จ่อกล้องไปที่บาร์โค้ดหรือ QR Code';
+
+    codeReader.decodeFromStream(scanStream,vid,onScanResult);
+  }catch(err){
+    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError'){
+      status.textContent='🚫 ไม่ได้รับอนุญาตใช้กล้อง – กรุณาพิมพ์เลขพัสดุด้านล่างแทน';
+    } else if(err.name==='NotFoundError'){
+      status.textContent='📵 ไม่พบกล้อง – กรุณาพิมพ์เลขพัสดุแทน';
+    } else {
+      status.textContent='❌ ข้อผิดพลาด: '+err.message;
+    }
+  }
+}
+
+async function toggleTorch(){
+  if(!scanStream)return;
+  const track=scanStream.getVideoTracks()[0];
+  if(!track)return;
+  torchOn=!torchOn;
+  try{
+    await track.applyConstraints({advanced:[{torch:torchOn}]});
+    const btn=document.getElementById('torch-btn');
+    if(btn){btn.style.background=torchOn?'var(--gold)':'rgba(255,255,255,.1)';btn.title=torchOn?'ปิดไฟฉาย':'เปิดไฟฉาย';}
+  }catch(e){torchOn=!torchOn;}
+}
+
+function onScanResult(result,err){
+  if(!result)return;
+  const text=result.getText().trim();
+  if(!text||text===lastScanText||scanCooldown)return;
+
+  // Debounce: ignore duplicate scans within 2.5s
+  lastScanText=text;
+  scanCooldown=true;
+  setTimeout(()=>{scanCooldown=false;lastScanText='';},2500);
+
+  // Visual flash
+  const flash=document.getElementById('scan-flash');
+  if(flash){flash.style.display='block';setTimeout(()=>flash.style.display='none',500);}
+
+  // Audio beep
+  beep();
+
+  // Haptic vibration
+  if(navigator.vibrate)navigator.vibrate([60,20,60]);
+
+  document.getElementById('scan-status').textContent='✅ สแกนสำเร็จ: '+text;
+  processScanResult(text);
+}
+
+function submitManualScan(){
+  const v=document.getElementById('scan-manual-input').value.trim();
+  if(!v)return;
+  document.getElementById('scan-status').textContent='🔍 ค้นหา: '+v;
+  processScanResult(v);
+}
+
+function processScanResult(tracking){
+  // Log to scan history
+  const ts=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const existing=parcels.find(p=>p.tracking.toLowerCase()===tracking.toLowerCase());
+
+  const histEntry={time:ts,tracking,found:!!existing,status:existing?existing.status:'not_found',parcelId:existing?existing.id:null};
+  scanHistory.unshift(histEntry);
+  if(scanHistory.length>20)scanHistory.pop();
+  renderScanHistory();
+
+  closeScanner();
+
+  if(scanMode==='receive-modal'){
+    // Fill tracking into receive modal
+    document.getElementById('r-tracking').value=tracking;
+    updateNotifPreview();
+    if(existing){
+      document.getElementById('scan-status');
+      setTimeout(()=>alert(`⚠ เลขพัสดุ ${tracking} มีในระบบแล้ว\nสถานะ: ${existing.status==='collected'?'รับแล้ว':'ค้างรับ'}`),200);
+    }
+    return;
+  }
+
+  if(scanMode==='receive'){
+    // Open receive modal prefilled
+    openReceiveModal();
+    document.getElementById('r-tracking').value=tracking;
+    updateNotifPreview();
+    if(existing){
+      setTimeout(()=>alert(`⚠ เลขพัสดุ ${tracking} มีในระบบแล้ว\nสถานะ: ${existing.status==='collected'?'รับแล้ว':'ค้างรับ'}`),200);
+    }
+    return;
+  }
+
+  if(scanMode==='collect'){
+    // Search in collect
+    document.getElementById('collect-search').value=tracking;
+    renderCollectSearch();
+    if(existing&&existing.status==='pending'){
+      selectParcel(existing.id);
+    } else if(!existing){
+      setTimeout(()=>alert(`❌ ไม่พบพัสดุเลข ${tracking} ในระบบ`),200);
+    } else {
+      setTimeout(()=>alert(`ℹ พัสดุเลข ${tracking} ได้รับไปแล้วเมื่อ ${fmtDate(existing.collectDate)}`),200);
+    }
+    // Navigate to collect section
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sec-collect').classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    return;
+  }
+}
+
+function processManualTracking(){
+  const v=document.getElementById('manual-tracking').value.trim();
+  if(!v)return;
+  const existing=parcels.find(p=>p.tracking.toLowerCase()===v.toLowerCase());
+  const res=document.getElementById('manual-scan-result');
+  if(!existing){
+    res.innerHTML=`<div class="alert alert-warning mt-12"><i class="ti ti-alert-circle"></i> ไม่พบพัสดุเลข <strong>${v}</strong> ในระบบ <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="openReceiveModal();document.getElementById('r-tracking').value='${v}';updateNotifPreview();document.getElementById('manual-scan-result').innerHTML=''"><i class="ti ti-plus"></i> รับพัสดุใหม่</button></div>`;
+    return;
+  }
+  const days=daysDiff(existing.receiveDate);
+  res.innerHTML=`<div class="card mt-12" style="border-color:${existing.status==='pending'?'var(--amber)':'var(--green)'}">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:18px;font-weight:600;color:var(--navy)">ห้อง ${existing.room}</div>
+        ${statusBadge(existing.status)}
+        ${typeBadge(existing.type)}
+      </div>
+      <div style="font-size:13px;color:var(--muted);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div><span style="color:var(--text)">ชื่อ:</span> ${existing.owner}</div>
+        <div><span style="color:var(--text)">บริษัท:</span> ${existing.carrier}</div>
+        <div><span style="color:var(--text)">รับเข้า:</span> ${fmtDate(existing.receiveDate)}</div>
+        <div><span style="color:var(--text)">ค้าง:</span> <strong style="color:${days>=7?'var(--red)':'inherit'}">${days} วัน</strong></div>
+      </div>
+      ${existing.status==='pending'?`<button class="btn btn-success" style="width:100%;margin-top:12px;justify-content:center" onclick="quickCollect('${existing.id}');document.getElementById('manual-scan-result').innerHTML=''"><i class="ti ti-check"></i> จ่ายพัสดุนี้</button>`:`<div class="alert alert-info" style="margin-top:10px;font-size:12px"><i class="ti ti-check"></i> รับออกแล้วเมื่อ ${fmtDate(existing.collectDate)} โดย ${existing.collector}</div>`}
+    </div>
+  </div>`;
+
+  // Add to scan history
+  const ts=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  scanHistory.unshift({time:ts,tracking:v,found:true,status:existing.status,parcelId:existing.id});
+  if(scanHistory.length>20)scanHistory.pop();
+  renderScanHistory();
+}
+
+function renderScanHistory(){
+  const tb=document.getElementById('scan-history-table');
+  if(!tb)return;
+  if(!scanHistory.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">ยังไม่มีประวัติการสแกน</td></tr>';return;}
+  tb.innerHTML=scanHistory.map(h=>`<tr>
+    <td style="padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)">${h.time}</td>
+    <td style="padding:8px 14px;border-bottom:1px solid var(--border);font-family:monospace;font-size:12px">${h.tracking}</td>
+    <td style="padding:8px 14px;border-bottom:1px solid var(--border)">
+      ${h.found
+        ? (h.status==='pending'
+            ?'<span class="badge badge-pending">พบ – รอรับ</span>'
+            :'<span class="badge badge-collected">พบ – รับแล้ว</span>')
+        : '<span class="badge badge-overdue">ไม่พบในระบบ</span>'}
+    </td>
+    <td style="padding:8px 14px;border-bottom:1px solid var(--border)">
+      ${h.found&&h.parcelId?`<button class="btn btn-outline btn-sm" onclick="showDetail('${h.parcelId}')"><i class="ti ti-eye"></i></button>`:''}
+      ${h.found&&h.status==='pending'&&h.parcelId?`<button class="btn btn-success btn-sm" onclick="quickCollect('${h.parcelId}')"><i class="ti ti-check"></i></button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function switchCamera(){
+  scanDeviceIndex=(scanDeviceIndex+1)%Math.max(scanDevices.length,1);
+  startScanner();
+}
+
+function stopScanner(){
+  try{
+    if(codeReader){codeReader.reset();codeReader=null;}
+    if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+    const vid=document.getElementById('scan-video');
+    if(vid)vid.srcObject=null;
+  }catch(e){}
+}
+
+function closeScanner(){
+  stopScanner();
+  document.getElementById('scan-overlay').classList.remove('show');
+}
+
+// Close scanner overlay on background click
+document.getElementById('scan-overlay').addEventListener('click',function(e){
+  if(e.target===this)closeScanner();
+});
+
+</script>
+</body>
+</html>
